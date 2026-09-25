@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "AstroPoster AI",
+    "slug": "astroposter-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.astroposterai.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.astroposterai.app",
+      "supportsTablet": true
+    },
+    "plugins": ["expo-router"],
+    "scheme": "astroposterai"
+  }
+}
