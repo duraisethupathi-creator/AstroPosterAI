@@ -1,0 +1,1 @@
+import{Screen}from'../../src/components/Screen';import{StateView}from'../../src/components/StateView';export default function Projects(){return <Screen><StateView type="empty" message="Your saved poster projects will appear here."/></Screen>}
