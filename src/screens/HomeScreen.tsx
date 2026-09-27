@@ -1,10 +1,11 @@
 import React from 'react';
-import {FlatList, Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {POSTER_CATEGORIES} from '../config/categories';
 
 export function HomeScreen() {
   return (
-    <SafeAreaView style={styles.page}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.page}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>ASTROPOSTER AI</Text>
         <Text style={styles.title}>ஜோதிட Content Studio</Text>

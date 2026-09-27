@@ -1,5 +1,6 @@
 import React, {useMemo, useState} from 'react';
-import {Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {POSTER_CATEGORIES, ZODIACS} from '../config/categories';
 
 export function CreatePosterScreen() {
@@ -9,7 +10,7 @@ export function CreatePosterScreen() {
   const [topic, setTopic] = useState('');
   const selected = useMemo(() => POSTER_CATEGORIES.find(x => x.id === category), [category]);
 
-  return <SafeAreaView style={s.page}><ScrollView contentContainerStyle={s.content}>
+  return <SafeAreaView edges={['top', 'left', 'right']} style={s.page}><ScrollView contentContainerStyle={s.content}>
     <Text style={s.kicker}>CREATE WITH AI</Text><Text style={s.title}>Poster உருவாக்கு</Text>
     <Text style={s.label}>Flow</Text><ScrollView horizontal showsHorizontalScrollIndicator={false}>{POSTER_CATEGORIES.map(x => <Pressable key={x.id} onPress={()=>setCategory(x.id)} style={[s.chip,category===x.id&&s.active]}><Text style={s.chipText}>{x.icon} {language==='ta'?x.titleTa:x.titleEn}</Text></Pressable>)}</ScrollView>
     <Text style={s.label}>Language</Text><View style={s.row}><Pressable onPress={()=>setLanguage('ta')} style={[s.option,language==='ta'&&s.active]}><Text style={s.optionText}>தமிழ்</Text></Pressable><Pressable onPress={()=>setLanguage('en')} style={[s.option,language==='en'&&s.active]}><Text style={s.optionText}>English</Text></Pressable></View>

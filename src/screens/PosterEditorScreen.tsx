@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
-import {Pressable, SafeAreaView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 export function PosterEditorScreen(){
  const [text,setText]=useState('இன்றைய ராசிபலன் இங்கே வரும். AI உருவாக்கிய content-ஐ முழுமையாக edit செய்யலாம்.');

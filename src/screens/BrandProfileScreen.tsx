@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
-import {SafeAreaView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 export function BrandProfileScreen() {
   const [businessName, setBusinessName] = useState('');
@@ -8,7 +9,7 @@ export function BrandProfileScreen() {
   const [address, setAddress] = useState('');
 
   return (
-    <SafeAreaView style={styles.page}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.page}>
       <Text style={styles.title}>Brand Profile</Text>
       <Text style={styles.copy}>ஒருமுறை save செய்த brand details எல்லா poster-களிலும் பயன்படுத்தப்படும்.</Text>
       <View style={styles.form}>
