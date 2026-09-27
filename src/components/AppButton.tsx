@@ -1,2 +1,23 @@
-import React from 'react';import{Pressable,StyleSheet,Text}from'react-native';import{theme}from'../theme';
-export function AppButton({title,onPress,variant='primary',disabled=false}:{title:string;onPress?:()=>void;variant?:'primary'|'outline';disabled?:boolean}){return <Pressable disabled={disabled} onPress={onPress} style={[s.base,variant==='outline'&&s.outline,disabled&&s.disabled]}><Text style={[s.text,variant==='outline'&&s.outlineText]}>{title}</Text></Pressable>};const s=StyleSheet.create({base:{backgroundColor:theme.colors.gold,paddingVertical:15,paddingHorizontal:18,borderRadius:theme.radius.md,alignItems:'center'},outline:{backgroundColor:'transparent',borderWidth:1,borderColor:theme.colors.gold},disabled:{opacity:.45},text:{color:'#111',fontWeight:'900'},outlineText:{color:theme.colors.goldLight}});
+import React from 'react';
+import {Pressable, StyleSheet, Text} from 'react-native';
+import {theme} from '../theme';
+
+export function AppButton({title, onPress, variant = 'primary', disabled = false, accessibilityLabel}: {
+  title: string; onPress?: () => void; variant?: 'primary' | 'outline'; disabled?: boolean; accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+      style={[s.base, variant === 'outline' && s.outline, disabled && s.disabled]}>
+      <Text style={[s.text, variant === 'outline' && s.outlineText]}>{title}</Text>
+    </Pressable>
+  );
+}
+
+const s = StyleSheet.create({
+  base: {backgroundColor: theme.colors.gold, paddingVertical: 15, paddingHorizontal: 18,
+    borderRadius: theme.radius.md, alignItems: 'center'},
+  outline: {backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.gold},
+  disabled: {opacity: .45}, text: {color: '#111', fontWeight: '900', textAlign: 'center'},
+  outlineText: {color: theme.colors.goldLight},
+});

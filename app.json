@@ -12,7 +12,10 @@
       "bundleIdentifier": "com.astroposterai.app",
       "supportsTablet": true
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      ["expo-image-picker", {"cameraPermission": false, "microphonePermission": false}]
+    ],
     "scheme": "astroposterai"
   }
 }
