@@ -3,8 +3,10 @@ import {Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimen
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {TranslationKey} from '../i18n';
 import {useLanguage} from '../i18n/LanguageProvider';
+import {ZODIACS} from '../features/astrology/zodiac';
 
 const variants = ['design.gold', 'design.temple', 'design.cosmic', 'design.traditional', 'design.modern'] as const satisfies readonly TranslationKey[];
+const previewZodiac = ZODIACS[0];
 
 export function PosterEditorScreen() {
   const {t} = useLanguage();
@@ -18,7 +20,7 @@ export function PosterEditorScreen() {
       <ScrollView contentContainerStyle={s.content}>
         <Text style={s.title}>{t('posterEditor')}</Text><Text style={s.sub}>{t('editorDescription')}</Text>
         <View style={[s.poster, {minHeight: (width - 40) * 5 / 4}]}>
-          <Text style={s.badge}>♈ {t('zodiac.aries')}</Text>
+          <Text style={s.badge}>{previewZodiac.symbol} {t(previewZodiac.translationKey)}</Text>
           <Text style={s.posterTitle}>{t('todayHoroscope')}</Text>
           <Text style={s.posterText}>{text}</Text>
           <View style={s.brand}><Text style={s.brandText}>{t('brandSample')}</Text></View>
@@ -28,7 +30,7 @@ export function PosterEditorScreen() {
           <Pressable accessibilityRole="button" onPress={() => setVariant(value => (value + 1) % variants.length)} style={s.button}>
             <Text style={s.buttonText}>🎨 {t(variants[variant])}</Text>
           </Pressable>
-          <Pressable style={s.button}><Text style={s.buttonText}>♈ {t('zodiac')}</Text></Pressable>
+          <Pressable style={s.button}><Text style={s.buttonText}>{previewZodiac.symbol} {t('zodiac')}</Text></Pressable>
         </View>
         <View style={s.actions}>
           <Pressable style={s.button}><Text style={s.buttonText}>Aa {t('font')}</Text></Pressable>

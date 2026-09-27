@@ -17,7 +17,7 @@ require.extensions['.ts'] = (module, filename) => {
 const {SUPPORTED_LANGUAGES, translations, translate, isLanguageCode} = require('../src/i18n/index.ts');
 const {createLanguageStore, LANGUAGE_STORAGE_KEY} = require('../src/i18n/languageStore.ts');
 const {POSTER_CATEGORIES, ZODIACS} = require('../src/config/categories.ts');
-const {createGenerateContentRequest} = require('../src/types/ai.ts');
+const {buildAstrologyRequest} = require('../src/features/astrology/requestBuilder.ts');
 
 function memoryStorage(initial = null) {
   let value = initial;
@@ -44,17 +44,17 @@ test('every translation, category and zodiac is present in all six languages', (
       assert.ok(!translations[code][key].includes('\uFFFD'), `${code}: corrupted ${key}`);
     }
     for (const item of POSTER_CATEGORIES) {
-      assert.ok(translations[code][item.titleKey]);
-      assert.ok(translations[code][item.subtitleKey]);
+      assert.ok(translations[code][item.translationKey]);
+      assert.ok(translations[code][item.descriptionKey]);
     }
-    for (const item of ZODIACS) assert.ok(translations[code][item.nameKey]);
+    for (const item of ZODIACS) assert.ok(translations[code][item.translationKey]);
   }
-  assert.equal(POSTER_CATEGORIES.length, 12);
+  assert.equal(POSTER_CATEGORIES.length, 22);
   assert.equal(ZODIACS.length, 12);
   assert.equal(new Set(ZODIACS.map(item => item.id)).size, 12);
   assert.equal(isLanguageCode('fr'), false);
   assert.equal(isLanguageCode(null), false);
-  console.log(`Verified ${keys.length} keys × 6 languages, 12 categories and 12 zodiac signs.`);
+  console.log(`Verified ${keys.length} keys × 6 languages, 22 categories and 12 zodiac signs.`);
 });
 
 test('a missing or blank translation falls back to English', () => {
@@ -164,8 +164,13 @@ test('an old failed write cannot set an error on a newer successful selection', 
 
 test('future AI requests accept every current language without translating IDs', () => {
   for (const {code} of SUPPORTED_LANGUAGES) {
-    const request = createGenerateContentRequest(code, {category: 'daily', zodiac: 'aries', extraInstruction: 'user text'});
-    assert.deepEqual(request, {category: 'daily', zodiac: 'aries', extraInstruction: 'user text', language: code, provider: 'auto'});
+    const result = buildAstrologyRequest({categoryId: 'daily', language: code, values: {date: '2026-09-27', zodiac: 'aries', extraInstruction: 'user text'}});
+    assert.equal(result.ok, true);
+    assert.equal(result.request.categoryId, 'daily');
+    assert.equal(result.request.zodiacId, 'aries');
+    assert.equal(result.request.language, code);
+    assert.equal(result.request.extraInstruction, 'user text');
+    assert.equal(result.request.provider, undefined);
   }
 });
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {POSTER_CATEGORIES} from '../config/categories';
+import {ASTROLOGY_CATEGORIES} from '../features/astrology/categories';
 import {useLanguage} from '../i18n/LanguageProvider';
 
 export function HomeScreen() {
@@ -22,7 +22,7 @@ export function HomeScreen() {
 
       <Text style={styles.sectionTitle}>{t('posterFlows')}</Text>
       <FlatList
-        data={POSTER_CATEGORIES}
+        data={ASTROLOGY_CATEGORIES}
         extraData={language}
         numColumns={2}
         keyExtractor={item => item.id}
@@ -31,8 +31,8 @@ export function HomeScreen() {
         renderItem={({item}) => (
           <Pressable style={styles.card}>
             <Text style={styles.icon}>{item.icon}</Text>
-            <Text style={styles.cardTitle}>{t(item.titleKey)}</Text>
-            <Text style={styles.cardSubtitle}>{t(item.subtitleKey)}</Text>
+            <Text style={styles.cardTitle}>{t(item.translationKey)}</Text>
+            <Text style={styles.cardSubtitle}>{t(item.descriptionKey)}</Text>
           </Pressable>
         )}
       />
