@@ -1,3 +1,49 @@
-import React,{createContext,useContext,useEffect,useMemo,useState}from'react';import AsyncStorage from'@react-native-async-storage/async-storage';import{LanguageCode,translations}from'./index';
-const KEY='astroposter.language';type Ctx={language:LanguageCode;setLanguage:(v:LanguageCode)=>Promise<void>;t:(key:string)=>string;ready:boolean};const LanguageContext=createContext<Ctx|undefined>(undefined);
-export function LanguageProvider({children}:{children:React.ReactNode}){const[language,setState]=useState<LanguageCode>('ta');const[ready,setReady]=useState(false);useEffect(()=>{AsyncStorage.getItem(KEY).then(v=>{if(v&&['ta','en','hi','te','kn','ml'].includes(v))setState(v as LanguageCode)}).finally(()=>setReady(true))},[]);const setLanguage=async(v:LanguageCode)=>{setState(v);await AsyncStorage.setItem(KEY,v)};const value=useMemo(()=>({language,setLanguage,t:(key:string)=>translations[language][key]??translations.en[key]??key,ready}),[language,ready]);return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>};export function useLanguage(){const v=useContext(LanguageContext);if(!v)throw new Error('useLanguage must be used inside LanguageProvider');return v}
+import React, {createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore} from 'react';
+import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {translate, type LanguageCode, type TranslationKey} from './index';
+import {createLanguageStore} from './languageStore';
+import {theme} from '../theme';
+
+type LanguageContextValue = {
+  language: LanguageCode;
+  setLanguage: (language: LanguageCode) => Promise<void>;
+  t: (key: TranslationKey) => string;
+  ready: boolean;
+  storageError: 'load' | 'save' | null;
+};
+
+const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
+
+export function LanguageProvider({children}: {children: React.ReactNode}) {
+  const [store] = useState(() => createLanguageStore(AsyncStorage));
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+
+  useEffect(() => { void store.hydrate(); }, [store]);
+
+  const value = useMemo(() => ({
+    ...snapshot,
+    setLanguage: store.setLanguage,
+    t: (key: TranslationKey) => translate(snapshot.language, key),
+  }), [snapshot, store]);
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {snapshot.ready ? children : (
+        <View style={styles.loading}>
+          <ActivityIndicator color={theme.colors.gold} accessibilityLabel={value.t('loading')} />
+        </View>
+      )}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useLanguage must be used inside LanguageProvider');
+  return context;
+}
+
+const styles = StyleSheet.create({
+  loading: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.bg},
+});

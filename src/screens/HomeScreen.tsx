@@ -2,25 +2,28 @@ import React from 'react';
 import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {POSTER_CATEGORIES} from '../config/categories';
+import {useLanguage} from '../i18n/LanguageProvider';
 
 export function HomeScreen() {
+  const {language, t} = useLanguage();
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.page}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>ASTROPOSTER AI</Text>
-        <Text style={styles.title}>ஜோதிட Content Studio</Text>
-        <Text style={styles.subtitle}>AI content • Premium posters • Social-ready</Text>
+        <Text style={styles.title}>{t('contentStudio')}</Text>
+        <Text style={styles.subtitle}>{t('homeSubtitle')}</Text>
       </View>
 
       <Pressable style={styles.magicCard}>
-        <Text style={styles.magicLabel}>✨ MAGIC 12 RASI</Text>
-        <Text style={styles.magicTitle}>12 ராசி Posters ஒரே Tap-ல்</Text>
-        <Text style={styles.magicCopy}>Content → Zodiac design → Brand → Export</Text>
+        <Text style={styles.magicLabel}>✨ {t('magic12')}</Text>
+        <Text style={styles.magicTitle}>{t('magic12Message')}</Text>
+        <Text style={styles.magicCopy}>{t('workflow')}</Text>
       </Pressable>
 
-      <Text style={styles.sectionTitle}>Poster Flows</Text>
+      <Text style={styles.sectionTitle}>{t('posterFlows')}</Text>
       <FlatList
         data={POSTER_CATEGORIES}
+        extraData={language}
         numColumns={2}
         keyExtractor={item => item.id}
         columnWrapperStyle={styles.row}
@@ -28,8 +31,8 @@ export function HomeScreen() {
         renderItem={({item}) => (
           <Pressable style={styles.card}>
             <Text style={styles.icon}>{item.icon}</Text>
-            <Text style={styles.cardTitle}>{item.titleTa}</Text>
-            <Text style={styles.cardSubtitle}>{item.titleEn}</Text>
+            <Text style={styles.cardTitle}>{t(item.titleKey)}</Text>
+            <Text style={styles.cardSubtitle}>{t(item.subtitleKey)}</Text>
           </Pressable>
         )}
       />

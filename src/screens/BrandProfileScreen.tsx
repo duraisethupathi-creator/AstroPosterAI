@@ -1,8 +1,10 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {useLanguage} from '../i18n/LanguageProvider';
 
 export function BrandProfileScreen() {
+  const {t} = useLanguage();
   const [businessName, setBusinessName] = useState('');
   const [astrologerName, setAstrologerName] = useState('');
   const [phone, setPhone] = useState('');
@@ -10,15 +12,17 @@ export function BrandProfileScreen() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.page}>
-      <Text style={styles.title}>Brand Profile</Text>
-      <Text style={styles.copy}>ஒருமுறை save செய்த brand details எல்லா poster-களிலும் பயன்படுத்தப்படும்.</Text>
+      <ScrollView>
+      <Text style={styles.title}>{t('brandProfile')}</Text>
+      <Text style={styles.copy}>{t('brandDescription')}</Text>
       <View style={styles.form}>
-        <TextInput value={businessName} onChangeText={setBusinessName} placeholder="Business / Astro Brand Name" placeholderTextColor="#777B8D" style={styles.input}/>
-        <TextInput value={astrologerName} onChangeText={setAstrologerName} placeholder="Astrologer Name" placeholderTextColor="#777B8D" style={styles.input}/>
-        <TextInput value={phone} onChangeText={setPhone} placeholder="Phone / WhatsApp" placeholderTextColor="#777B8D" keyboardType="phone-pad" style={styles.input}/>
-        <TextInput value={address} onChangeText={setAddress} placeholder="Address" placeholderTextColor="#777B8D" multiline style={[styles.input, styles.multiline]}/>
-        <View style={styles.logoBox}><Text style={styles.logoText}>＋ Logo / Photo upload module</Text></View>
+        <TextInput value={businessName} onChangeText={setBusinessName} placeholder={t('businessName')} accessibilityLabel={t('businessName')} placeholderTextColor="#777B8D" style={styles.input}/>
+        <TextInput value={astrologerName} onChangeText={setAstrologerName} placeholder={t('astrologerName')} accessibilityLabel={t('astrologerName')} placeholderTextColor="#777B8D" style={styles.input}/>
+        <TextInput value={phone} onChangeText={setPhone} placeholder={t('phone')} accessibilityLabel={t('phone')} placeholderTextColor="#777B8D" keyboardType="phone-pad" style={styles.input}/>
+        <TextInput value={address} onChangeText={setAddress} placeholder={t('address')} accessibilityLabel={t('address')} placeholderTextColor="#777B8D" multiline style={[styles.input, styles.multiline]}/>
+        <View style={styles.logoBox}><Text style={styles.logoText}>＋ {t('logoUpload')}</Text></View>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

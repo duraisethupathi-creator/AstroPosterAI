@@ -1,8 +1,32 @@
-export const SUPPORTED_LANGUAGES=[{code:'ta',nativeName:'தமிழ்'},{code:'en',nativeName:'English'},{code:'hi',nativeName:'हिन्दी'},{code:'te',nativeName:'తెలుగు'},{code:'kn',nativeName:'ಕನ್ನಡ'},{code:'ml',nativeName:'മലയാളം'}]as const;export type LanguageCode=typeof SUPPORTED_LANGUAGES[number]['code'];
-export const translations:Record<LanguageCode,Record<string,string>>={
-ta:{home:'முகப்பு',create:'உருவாக்கு',brand:'பிராண்ட்',projects:'ப்ராஜெக்ட்ஸ்',settings:'அமைப்புகள்',language:'மொழி',selectLanguage:'மொழியை தேர்வு செய்யவும்',aiLanguage:'AI Content மொழி',createPoster:'Poster உருவாக்கு',flow:'வகை',zodiac:'ராசி',extraInstruction:'கூடுதல் வழிமுறை',generate:'AI Content உருவாக்கு',generate12:'12 ராசிக்கும் உருவாக்கு'},
-en:{home:'Home',create:'Create',brand:'Brand',projects:'Projects',settings:'Settings',language:'Language',selectLanguage:'Select language',aiLanguage:'AI Content language',createPoster:'Create Poster',flow:'Flow',zodiac:'Zodiac',extraInstruction:'Extra instruction',generate:'Generate AI Content',generate12:'Generate all 12 signs'},
-hi:{home:'होम',create:'बनाएँ',brand:'ब्रांड',projects:'प्रोजेक्ट्स',settings:'सेटिंग्स',language:'भाषा',selectLanguage:'भाषा चुनें',aiLanguage:'AI सामग्री भाषा',createPoster:'पोस्टर बनाएँ',flow:'प्रकार',zodiac:'राशि',extraInstruction:'अतिरिक्त निर्देश',generate:'AI सामग्री बनाएँ',generate12:'12 राशियों के लिए बनाएँ'},
-te:{home:'హోమ్',create:'సృష్టించు',brand:'బ్రాండ్',projects:'ప్రాజెక్ట్స్',settings:'సెట్టింగ్స్',language:'భాష',selectLanguage:'భాషను ఎంచుకోండి',aiLanguage:'AI కంటెంట్ భాష',createPoster:'పోస్టర్ సృష్టించు',flow:'రకం',zodiac:'రాశి',extraInstruction:'అదనపు సూచన',generate:'AI కంటెంట్ సృష్టించు',generate12:'12 రాశులకు సృష్టించు'},
-kn:{home:'ಮುಖಪುಟ',create:'ರಚಿಸಿ',brand:'ಬ್ರ್ಯಾಂಡ್',projects:'ಪ್ರಾಜೆಕ್ಟ್‌ಗಳು',settings:'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',language:'ಭಾಷೆ',selectLanguage:'ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ',aiLanguage:'AI ವಿಷಯ ಭಾಷೆ',createPoster:'ಪೋಸ್ಟರ್ ರಚಿಸಿ',flow:'ವಿಧ',zodiac:'ರಾಶಿ',extraInstruction:'ಹೆಚ್ಚುವರಿ ಸೂಚನೆ',generate:'AI ವಿಷಯ ರಚಿಸಿ',generate12:'12 ರಾಶಿಗಳಿಗೆ ರಚಿಸಿ'},
-ml:{home:'ഹോം',create:'സൃഷ്ടിക്കുക',brand:'ബ്രാൻഡ്',projects:'പ്രോജക്റ്റുകൾ',settings:'ക്രമീകരണങ്ങൾ',language:'ഭാഷ',selectLanguage:'ഭാഷ തിരഞ്ഞെടുക്കുക',aiLanguage:'AI ഉള്ളടക്ക ഭാഷ',createPoster:'പോസ്റ്റർ സൃഷ്ടിക്കുക',flow:'തരം',zodiac:'രാശി',extraInstruction:'കൂടുതൽ നിർദ്ദേശം',generate:'AI ഉള്ളടക്കം സൃഷ്ടിക്കുക',generate12:'12 രാശികൾക്കും സൃഷ്ടിക്കുക'}};
+import {messages, type TranslationDictionary, type TranslationKey} from './strings';
+
+export const SUPPORTED_LANGUAGES = [
+  {code: 'ta', nativeName: 'தமிழ்'},
+  {code: 'en', nativeName: 'English'},
+  {code: 'hi', nativeName: 'हिन्दी'},
+  {code: 'te', nativeName: 'తెలుగు'},
+  {code: 'kn', nativeName: 'ಕನ್ನಡ'},
+  {code: 'ml', nativeName: 'മലയാളം'},
+] as const;
+
+export type LanguageCode = typeof SUPPORTED_LANGUAGES[number]['code'];
+export type {TranslationKey, TranslationDictionary};
+
+export function isLanguageCode(value: unknown): value is LanguageCode {
+  return SUPPORTED_LANGUAGES.some(({code}) => code === value);
+}
+
+function dictionary(column: number): TranslationDictionary {
+  return Object.fromEntries(
+    Object.entries(messages).map(([key, values]) => [key, values[column]]),
+  ) as TranslationDictionary;
+}
+
+export const translations: Record<LanguageCode, TranslationDictionary> = {
+  en: dictionary(0), ta: dictionary(1), hi: dictionary(2),
+  te: dictionary(3), kn: dictionary(4), ml: dictionary(5),
+};
+
+export function translate(language: LanguageCode, key: TranslationKey): string {
+  return translations[language][key] || translations.en[key];
+}
