@@ -1,1 +1,14 @@
-import{BrandProfileProvider}from'../src/providers/BrandProfileProvider';import{Stack}from'expo-router';import{StatusBar}from'expo-status-bar';import{SafeAreaProvider}from'react-native-safe-area-context';import{LanguageProvider}from'../src/i18n/LanguageProvider';export default function RootLayout(){return <SafeAreaProvider><LanguageProvider><BrandProfileProvider><StatusBar style="light"/><Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:'#090B14'}}}><Stack.Screen name="(tabs)"/><Stack.Screen name="editor"/><Stack.Screen name="export"/></Stack></BrandProfileProvider></LanguageProvider></SafeAreaProvider>}
+import {Stack} from 'expo-router';
+import {StatusBar} from 'expo-status-bar';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {LanguageProvider} from '../src/i18n/LanguageProvider';
+import {BrandProfileProvider} from '../src/providers/BrandProfileProvider';
+
+export default function RootLayout() {
+  return <SafeAreaProvider><LanguageProvider><BrandProfileProvider>
+    <StatusBar style="light"/>
+    <Stack screenOptions={{headerShown: false, contentStyle: {backgroundColor: '#090B14'}}}>
+      <Stack.Screen name="(tabs)"/><Stack.Screen name="editor"/><Stack.Screen name="export"/>
+    </Stack>
+  </BrandProfileProvider></LanguageProvider></SafeAreaProvider>;
+}

@@ -44,7 +44,7 @@ export function RequestPreview({request}: {request: AstrologyGenerationRequest})
       {request.brand ? <Text style={s.value}>{request.brand.businessName || request.brand.astrologerName}</Text> : null}
       <Text style={s.label}>{t('astro.expectedSections')}</Text>
       <Text style={s.value}>{request.outputSections.map(section => t(`output.${section}`)).join(' • ')}</Text>
-      <Text style={s.hint}>{t('astro.previewOnly')}</Text>
+      <Text style={s.hint}>{t('ai.createHint')}</Text>
     </View>
   );
 }
