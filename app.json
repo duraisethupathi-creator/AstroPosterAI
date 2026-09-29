@@ -14,7 +14,14 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-image-picker", {"cameraPermission": false, "microphonePermission": false}]
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-sharing"
     ],
     "scheme": "astroposterai"
   }

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import type {AstrologyGenerationRequest} from '../../features/astrology/types';
-import type {AstrologyGenerationResult, GeneratedContent} from '../../types/generation';
+import type {AstrologyGenerationResult} from '../../types/generation';
 import {AIClientError, generateAstrologyContent, type AIClientErrorCode} from './aiClient';
 
 type State = {key: string; loading: boolean; result?: AstrologyGenerationResult; error?: AIClientErrorCode};
@@ -20,16 +20,12 @@ export function useGeneration(request: AstrologyGenerationRequest | undefined) {
     setState({key, loading: true});
     try {
       const result = await generateAstrologyContent(request, {signal: controller.signal});
-      if (!controller.signal.aborted) setState({key, loading: false, result});
+      if (!controller.signal.aborted) { setState({key, loading: false, result}); return result; }
     } catch (error) {
       if (!controller.signal.aborted) setState({key, loading: false, error: error instanceof AIClientError ? error.code : 'NETWORK_ERROR'});
     } finally { if (active.current === controller) active.current = null; }
   }
-  function edit(content: GeneratedContent) {
-    setState(previous => previous.key === key && previous.result
-      ? {...previous, result: {...previous.result, content}} : previous);
-  }
   // A late response can never be rendered under a different category/language.
   const visible: State = state.key === key ? state : {key, loading: false};
-  return {...visible, generate, edit};
+  return {...visible, generate};
 }

@@ -1,7 +1,9 @@
+import {resultLanguage, type ContentAction} from '../../types/contentStudio';
 import {getCategory} from '../../features/astrology/categories';
 import type {AstrologyGenerationRequest} from '../../features/astrology/types';
 import {AI_ERROR_CODES, type AstrologyGenerationResult, type AIErrorCode} from '../../types/generation';
 import {logAIEvent} from './debug';
+import {hasZodiacConflict} from '../../features/astrology/zodiacConsistency';
 
 declare const __DEV__: boolean;
 
@@ -12,23 +14,24 @@ export class AIClientError extends Error {
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
-export function parseGenerationResult(value: unknown, request: AstrologyGenerationRequest): AstrologyGenerationResult {
+export function parseGenerationResult(value: unknown, request: AstrologyGenerationRequest, action?: ContentAction): AstrologyGenerationResult {
   if (!record(value) || value.success !== true ||
     !['mock', 'live'].includes(String(value.mode)) || value.categoryId !== request.categoryId ||
-    value.language !== request.language || value.zodiacId !== request.zodiacId || !record(value.content)) {
+    value.language !== resultLanguage(request, action) || value.zodiacId !== request.zodiacId || !record(value.content)) {
     throw new AIClientError('INVALID_RESPONSE');
   }
   const content = value.content;
-  const sections = getCategory(request.categoryId).outputSections;
+  const sections = action?.sectionKey ? [action.sectionKey] : getCategory(request.categoryId).outputSections;
   if (Object.keys(content).length !== sections.length || sections.some(section =>
     typeof content[section] !== 'string' || !content[section].trim() || content[section].length > 700)) {
     throw new AIClientError('INVALID_RESPONSE');
   }
+  if (hasZodiacConflict(content, request.zodiacId)) throw new AIClientError('ZODIAC_MISMATCH');
   return {success: true, mode: value.mode as 'mock' | 'live',
-    categoryId: request.categoryId, language: request.language, zodiacId: request.zodiacId,
+    categoryId: request.categoryId, language: resultLanguage(request, action), zodiacId: request.zodiacId,
     content: Object.fromEntries(sections.map(section => [section, content[section]]))};
 }
-type ClientOptions = {baseUrl?: string; signal?: AbortSignal; timeoutMs?: number; fetcher?: typeof fetch; development?: boolean};
+type ClientOptions = {action?: ContentAction; baseUrl?: string; signal?: AbortSignal; timeoutMs?: number; fetcher?: typeof fetch; development?: boolean};
 export async function generateAstrologyContent(request: AstrologyGenerationRequest, options: ClientOptions = {}) {
   if (request.generateAllZodiacs) throw new AIClientError('BULK_NOT_SUPPORTED');
   // Only a public backend URL is bundled. No provider credentials or SDKs.
@@ -52,7 +55,7 @@ export async function generateAstrologyContent(request: AstrologyGenerationReque
     const wireRequest = {...request, brand: request.brand ? {...request.brand, logoUri: null, profilePhotoUri: null} : undefined};
     const response = await (options.fetcher ?? fetch)(`${url.toString().replace(/\/$/, '')}/api/ai/generate`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({request: wireRequest}), signal: controller.signal,
+      body: JSON.stringify({request: wireRequest, action: options.action}), signal: controller.signal,
     });
     logAIEvent('HTTP status', {status: response.status}, development);
     const raw = await response.text();
@@ -65,7 +68,7 @@ export async function generateAstrologyContent(request: AstrologyGenerationReque
       if (AI_ERROR_CODES.some(allowed => allowed === code)) throw new AIClientError(code as AIErrorCode);
       throw new AIClientError('INVALID_RESPONSE');
     }
-    return parseGenerationResult(body, request);
+    return parseGenerationResult(body, request, options.action);
   } catch (error) {
     if (timedOut) throw new AIClientError('CLIENT_TIMEOUT');
     if (options.signal?.aborted) throw new AIClientError('CANCELLED');

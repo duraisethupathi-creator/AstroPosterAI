@@ -1,11 +1,12 @@
-import React, {useReducer, useRef, useState} from 'react';
+import React, {useEffect, useReducer, useRef, useState} from 'react';
 import {ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton} from '../components/AppButton';
-import {SUPPORTED_LANGUAGES, type LanguageCode} from '../i18n';
+import {SUPPORTED_LANGUAGES, isLanguageCode, type LanguageCode} from '../i18n';
 import {useLanguage} from '../i18n/LanguageProvider';
 import {useBrandProfile} from '../providers/BrandProfileProvider';
-import {ASTROLOGY_CATEGORIES, getCategory} from '../features/astrology/categories';
+import {ASTROLOGY_CATEGORIES, getCategory, isAstrologyCategoryId} from '../features/astrology/categories';
+import {isZodiacId} from '../features/astrology/zodiac';
 import {FIELDS} from '../features/astrology/categoryFields';
 import {categoryFormReducer, createCategoryForm, type CategoryFormAction} from '../features/astrology/formState';
 import {buildAstrologyRequest} from '../features/astrology/requestBuilder';
@@ -14,15 +15,27 @@ import {RequestPreview} from '../features/astrology/components/RequestPreview';
 import {theme} from '../theme';
 import {useGeneration} from '../services/ai/useGeneration';
 import {AI_ERROR_MESSAGES} from '../services/ai/errorMessages';
-import {GeneratedContentEditor} from '../components/GeneratedContentEditor';
+import {useLocalSearchParams, useRouter} from 'expo-router';
+import {useContentStudio} from '../providers/ContentStudioProvider';
+import {isStudioDirty} from '../state/contentStudioStore';
+import {confirmStudioReplacement} from '../components/confirmStudioReplacement';
 import {logAIEvent} from '../services/ai/debug';
 
 export function CreatePosterScreen() {
   const {language, t} = useLanguage();
+  const router = useRouter();
+  const {store: studio, state: studioState} = useContentStudio();
   const [languageOverride, setLanguageOverride] = useState<LanguageCode | null>(null);
   const contentLanguage = languageOverride ?? language;
   const {brandSnapshot, loading: brandLoading, loadFailed: brandLoadFailed} = useBrandProfile();
   const [form, dispatch] = useReducer(categoryFormReducer, 'daily', createCategoryForm);
+  const params = useLocalSearchParams<{contentLanguage?: string; categoryId?: string; zodiacId?: string; selectionId?: string}>();
+  useEffect(() => {
+    if (!params.selectionId) return;
+    if (isAstrologyCategoryId(params.categoryId)) dispatch({type: 'category', categoryId: params.categoryId});
+    if (isLanguageCode(params.contentLanguage)) setLanguageOverride(params.contentLanguage);
+    if (isZodiacId(params.zodiacId)) dispatch({type: 'field', id: 'zodiac', value: params.zodiacId});
+  }, [params.selectionId, params.categoryId, params.contentLanguage, params.zodiacId]);
   const [submitted, setSubmitted] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const focusOutput = useRef(false);
@@ -45,10 +58,15 @@ export function CreatePosterScreen() {
     if (!result.ok) scroll.current?.scrollTo({y: 0, animated: true});
   }
 
-  function generate() {
+  async function generate() {
+    if (generation.loading) return;
+    if (isStudioDirty(studio.getSnapshot()) && !await confirmStudioReplacement(t)) return;
     logAIEvent('button pressed');
     prepare();
-    if (result.ok && !brandBlocked && !form.generateAllZodiacs) void generation.generate();
+    if (result.ok && !brandBlocked && !form.generateAllZodiacs) {
+      const generated = await generation.generate();
+      if (generated) { studio.start(result.request, generated); router.push('/studio'); }
+    }
   }
 
   return (
@@ -58,6 +76,7 @@ export function CreatePosterScreen() {
           <Text style={s.kicker}>{t('createWithAI')}</Text>
           <Text style={s.title}>{t('createPoster')}</Text>
           <Text style={s.hint}>{t('ai.createHint')}</Text>
+          {studioState.session ? <AppButton title={t('studio.resume')} variant="outline" onPress={() => router.push('/studio')}/> : null}
           {submitted && !result.ok ? <Text accessibilityRole="alert" style={s.error}>{t('astro.checkFields')}</Text> : null}
 
           <View style={s.section}>
@@ -131,7 +150,7 @@ export function CreatePosterScreen() {
               <Text accessibilityRole="alert" style={s.error}>{t(AI_ERROR_MESSAGES[generation.error])}</Text>
               <AppButton title={t('ai.retry')} onPress={generate}/>
             </View> : generation.result ?
-              <GeneratedContentEditor result={generation.result} onChange={generation.edit}/> :
+              <AppButton title={t('studio.resume')} onPress={() => router.push('/studio')}/> :
               <RequestPreview request={result.request}/>}
           </View> : null}
         </ScrollView>

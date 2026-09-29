@@ -9,6 +9,7 @@ export type AstrologyGenerationResult = Pick<AstrologyGenerationRequest, 'catego
 // Reserved contract only; Stage 5 accepts one sign per request.
 export type AstrologyBatchResult = {success: true; results: AstrologyGenerationResult[]};
 export const AI_ERROR_CODES = [
+  'ZODIAC_MISMATCH',
   'INVALID_REQUEST', 'BULK_NOT_SUPPORTED', 'RATE_LIMITED', 'BODY_TOO_LARGE',
   'ORIGIN_DENIED', 'UNSUPPORTED_MEDIA_TYPE', 'NOT_FOUND', 'SERVER_ERROR', 'REQUEST_CANCELLED',
   'LOCAL_AI_NOT_RUNNING', 'LOCAL_AI_MODEL_NOT_FOUND', 'LOCAL_AI_TIMEOUT',

@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import type {ContentAction} from '../../../src/types/contentStudio';
 import type {Env} from '../config/env';
 import type {AstrologyGenerationRequest} from '../../../src/features/astrology/types';
 import type {AstrologyAIProvider} from './types';
@@ -6,6 +7,8 @@ import {ApiError} from '../middleware/errorHandler';
 import {buildPrompt} from './promptBuilder';
 import {outputJsonSchema, parseOutput} from './outputSchemas';
 import {markTiming} from './timing';
+import {generationSeed} from './generationSeed';
+import {hasZodiacConflict} from '../../../src/features/astrology/zodiacConsistency';
 
 const envelope = z.object({done: z.literal(true), message: z.object({content: z.string().max(20000)})});
 type Message = {role: 'system' | 'user' | 'assistant'; content: string};
@@ -33,15 +36,15 @@ async function boundedJson(response: Response): Promise<unknown> {
 export class LocalAIProvider implements AstrologyAIProvider {
   constructor(private readonly env: Env, private readonly fetcher: typeof fetch = fetch) {}
 
-  private async call(messages: Message[], request: AstrologyGenerationRequest, signal: AbortSignal) {
+  private async call(messages: Message[], request: AstrologyGenerationRequest, signal: AbortSignal, action?: ContentAction) {
     markTiming('local AI call started');
     let response: Response;
     try {
       response = await this.fetcher(`${this.env.LOCAL_AI_BASE_URL.replace(/\/$/, '')}/api/chat`, {
         method: 'POST', headers: {'Content-Type': 'application/json'}, signal, redirect: 'error',
         body: JSON.stringify({model: this.env.LOCAL_AI_MODEL, stream: false, think: this.env.LOCAL_AI_THINK,
-          messages, format: outputJsonSchema(request.categoryId), keep_alive: '5m',
-          options: {temperature: 0, num_ctx: this.env.LOCAL_AI_CONTEXT, num_predict: this.env.LOCAL_AI_MAX_TOKENS}}),
+          messages, format: outputJsonSchema(request.categoryId, action?.sectionKey), keep_alive: '5m',
+          options: {seed: generationSeed(request, action), temperature: 0, num_ctx: this.env.LOCAL_AI_CONTEXT, num_predict: this.env.LOCAL_AI_MAX_TOKENS}}),
       });
     } catch (error) {
       if (signal.aborted) throw new ApiError(499, 'REQUEST_CANCELLED');
@@ -62,24 +65,26 @@ export class LocalAIProvider implements AstrologyAIProvider {
     return parsed.data.message.content;
   }
 
-  async generate(request: AstrologyGenerationRequest, signal: AbortSignal) {
-    const prompt = buildPrompt(request);
+  async generate(request: AstrologyGenerationRequest, signal: AbortSignal, action?: ContentAction) {
+    const prompt = buildPrompt(request, action);
     const messages: Message[] = [{role: 'system', content: prompt.instructions},
-      {role: 'user', content: `${prompt.input}\nRequired JSON schema: ${JSON.stringify(outputJsonSchema(request.categoryId))}`}];
+      {role: 'user', content: `${prompt.input}\nRequired JSON schema: ${JSON.stringify(outputJsonSchema(request.categoryId, action?.sectionKey))}`}];
     // Both calls share the gateway's one deadline. Transport/model failures are
     // never retried. Only invalid model output is eligible for one repair.
     for (let attempt = 0; attempt < 2; attempt++) {
       let raw = '';
       try {
-        raw = await this.call(messages, request, signal);
-        return parseOutput(request.categoryId, raw);
+        raw = await this.call(messages, request, signal, action);
+        const content = parseOutput(request.categoryId, raw, action?.sectionKey);
+        if (hasZodiacConflict(content, request.zodiacId)) throw new ApiError(502, 'ZODIAC_MISMATCH');
+        return content;
       } catch (error) {
         if (signal.aborted) throw new ApiError(499, 'REQUEST_CANCELLED');
         if (!(error instanceof ApiError)) throw new ApiError(503, 'LOCAL_AI_CONNECTION_ERROR');
-        if (error.code !== 'LOCAL_AI_INVALID_OUTPUT' || attempt === 1) throw error;
+        if (!['LOCAL_AI_INVALID_OUTPUT', 'ZODIAC_MISMATCH'].includes(error.code) || attempt === 1) throw error;
         markTiming('local AI repair started');
         if (raw) messages.push({role: 'assistant', content: raw.slice(0, 4000)});
-        messages.push({role: 'user', content: 'Repair the previous output. Return ONLY one JSON object matching the required schema. Every required value must be a non-empty short string in the requested language. No markdown or explanation.'});
+        messages.push({role: 'user', content: `Repair the previous output. The ONLY permitted zodiac is ${request.zodiacId ?? 'the original request context'}. Remove every reference to other zodiac signs in every language. Return ONLY one JSON object matching the required schema. Every required value must be a non-empty short string in the requested language. No markdown or explanation.`});
       }
     }
     throw new ApiError(502, 'LOCAL_AI_INVALID_OUTPUT');

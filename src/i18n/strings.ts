@@ -1,6 +1,10 @@
 // Columns: English, Tamil, Hindi, Telugu, Kannada, Malayalam.
 // Each key requires all six translations. Translation keys are inferred below.
+import {studioMessages} from './studioStrings';
+import {previewMessages} from './previewStrings';
 export const messages = {
+  ...previewMessages,
+  ...studioMessages,
   "home": ["Home","முகப்பு","होम","హోమ్","ಮುಖಪುಟ","ഹോം"],
   "create": ["Create","உருவாக்கு","बनाएँ","సృష్టించండి","ರಚಿಸಿ","സൃഷ്ടിക്കുക"],
   "brand": ["Brand","பிராண்ட்","ब्रांड","బ్రాండ్","ಬ್ರ್ಯಾಂಡ್","ബ്രാൻഡ്"],

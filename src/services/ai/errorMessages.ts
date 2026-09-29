@@ -1,6 +1,7 @@
 import type {TranslationKey} from '../../i18n';
 import type {AIClientErrorCode} from './aiClient';
 export const AI_ERROR_MESSAGES: Record<AIClientErrorCode, TranslationKey> = {
+  ZODIAC_MISMATCH: 'preview.zodiacMismatch',
   INVALID_REQUEST: 'ai.invalidRequest', BULK_NOT_SUPPORTED: 'ai.bulkLater', RATE_LIMITED: 'ai.rateLimited',
   BODY_TOO_LARGE: 'ai.invalidRequest', ORIGIN_DENIED: 'ai.serviceUnavailable',
   UNSUPPORTED_MEDIA_TYPE: 'ai.invalidRequest', NOT_FOUND: 'ai.serviceUnavailable', SERVER_ERROR: 'ai.failed',

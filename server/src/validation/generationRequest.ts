@@ -5,6 +5,7 @@ import {validateCategory} from '../../../src/features/astrology/validation';
 import type {AstrologyGenerationRequest, FormValues} from '../../../src/features/astrology/types';
 import {isLanguageCode} from '../../../src/i18n';
 import {ApiError} from '../middleware/errorHandler';
+import {CONTENT_OPERATIONS, CONTENT_TONES, type ContentAction} from '../../../src/types/contentStudio';
 
 const text = z.string().trim().max(2000);
 const brand = z.object({
@@ -13,6 +14,14 @@ const brand = z.object({
   logoUri: z.string().max(4096).nullable(), profilePhotoUri: z.string().max(4096).nullable(),
 }).strict();
 const bodySchema = z.object({
+  action: z.object({
+    operation: z.enum(CONTENT_OPERATIONS).refine(value => value !== 'generate'),
+    language: z.string().refine(isLanguageCode),
+    currentContent: z.record(z.string().max(40), z.string().max(700)),
+    sectionKey: z.string().max(40).optional(),
+    tone: z.enum(CONTENT_TONES).optional(),
+    targetLanguage: z.string().refine(isLanguageCode).optional(),
+  }).strict().optional(),
   request: z.object({
     categoryId: z.string().refine(isAstrologyCategoryId),
     language: z.string().refine(isLanguageCode),
@@ -59,5 +68,17 @@ export function parseGenerationBody(body: unknown) {
     zodiacId: isZodiacId(input.zodiacId) ? input.zodiacId : undefined,
     promptType: category.promptType, outputSections: category.outputSections,
   };
-  return {request};
+  const action = parsed.data.action;
+  if (action) {
+    const keys = category.outputSections as readonly string[];
+    if (Object.keys(action.currentContent).length !== keys.length || keys.some(key => !(key in action.currentContent)) ||
+      (action.sectionKey && !keys.includes(action.sectionKey)) ||
+      (['regenerate', 'translate'].includes(action.operation) && action.sectionKey) ||
+      (action.operation === 'translate' ? !action.targetLanguage : Boolean(action.targetLanguage)) ||
+      (action.operation === 'changeTone' && !action.tone) ||
+      (!action.sectionKey && action.operation !== 'regenerate' && keys.some(key => !action.currentContent[key].trim()))) {
+      throw new ApiError(400, 'INVALID_REQUEST');
+    }
+  }
+  return {request, ...(action ? {action: action as ContentAction} : {})};
 }
