@@ -43,7 +43,8 @@ export default function RasiResultsScreen() {
     })}
     {failed > 0 ? <AppButton title={t('rasi12.retryFailed')} disabled={batch.running} onPress={() => void rasiStore.retryFailed()}/> : null}
     {batch.running ? <AppButton title={t('rasi12.cancel')} variant="outline" onPress={() => rasiStore.cancel()}/> : null}
-    {ready === 12 ? <Text style={s.done}>{t('rasi12.complete')}</Text> : null}
+    {ready === 12 ? <><Text style={s.done}>{t('rasi12.complete')}</Text>
+      <AppButton title="Create 12 Posters" onPress={() => router.push('/rasi-posters')}/></> : null}
   </ScrollView></SafeAreaView>;
 }
 const s=StyleSheet.create({
