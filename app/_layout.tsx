@@ -10,7 +10,7 @@ export default function RootLayout() {
     <StatusBar style="light"/>
     <Stack screenOptions={{headerShown: false, contentStyle: {backgroundColor: '#090B14'}}}>
       <Stack.Screen name="(tabs)"/><Stack.Screen name="editor"/><Stack.Screen name="export"/>
-      <Stack.Screen name="studio"/>
+      <Stack.Screen name="studio"/><Stack.Screen name="rasi-results"/><Stack.Screen name="rasi-posters"/>
     </Stack>
   </ContentStudioProvider></BrandProfileProvider></LanguageProvider></SafeAreaProvider>;
 }
