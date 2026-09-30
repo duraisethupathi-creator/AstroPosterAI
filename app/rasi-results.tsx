@@ -9,10 +9,12 @@ import {ZODIACS} from '../src/features/astrology/zodiac';
 import {rasiStore} from '../src/features/rasi/rasiStore';
 import {useRasiBatch} from '../src/features/rasi/useRasiBatch';
 import {theme} from '../src/theme';
+import {useContentStudio} from '../src/providers/ContentStudioProvider';
 
 export default function RasiResultsScreen() {
   const {t} = useLanguage();
   const router = useRouter();
+  const {store: studio} = useContentStudio();
   const batch = useRasiBatch();
   useEffect(() => { if (batch && !batch.running && batch.items.every(x => x.status === 'pending')) void rasiStore.generateAll(); }, [batch?.id]);
   if (!batch) return <SafeAreaView style={s.page}><View style={s.content}><Text style={s.title}>{t('rasi12.title')}</Text>
@@ -33,6 +35,8 @@ export default function RasiResultsScreen() {
         <View style={s.row}><Text style={s.zodiac}>{z.symbol} {label}</Text>
           <Text style={item.status === 'failed' ? s.error : s.status}>{t(`rasi12.${item.status}` as any)}</Text></View>
         {preview ? <Text numberOfLines={2} style={s.preview}>{preview}</Text> : null}
+        {item.status === 'success' && item.result ? <Pressable onPress={() => { studio.start(item.request, item.result!); router.push('/studio'); }}>
+          <Text style={s.action}>{t('rasi12.edit')}</Text></Pressable> : null}
         {item.status === 'failed' ? <Pressable disabled={batch.running} onPress={() => void rasiStore.retryOne(item.zodiacId)}>
           <Text style={s.action}>{t('rasi12.retryOne')}</Text></Pressable> : null}
       </View>;
