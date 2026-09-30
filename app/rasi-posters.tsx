@@ -13,6 +13,7 @@ import {posterProjectStorage} from '../src/services/storage/posterProjectStorage
 import {useContentStudio} from '../src/providers/ContentStudioProvider';
 import {theme} from '../src/theme';
 import type {PosterProject} from '../src/features/projects/types';
+import {POSTER_TEMPLATES, DEFAULT_TEMPLATE_ID} from '../src/features/templates/templates';
 
 function makeProjects(): PosterProject[] {
   const batch = rasiStore.getSnapshot();
@@ -25,13 +26,13 @@ function makeProjects(): PosterProject[] {
       zodiacId: item.zodiacId, zodiacName: translate(batch.baseRequest.language, zodiac.translationKey), zodiacSymbol: zodiac.symbol,
       language: item.result!.language, categoryId: item.request.categoryId, date: item.request.period?.date,
       content: JSON.parse(JSON.stringify(item.result!.content)), brand: item.request.brand,
-      request: JSON.parse(JSON.stringify(item.request)), templateId: `stage7-${index % 3}`,
+      request: JSON.parse(JSON.stringify(item.request)), templateId: DEFAULT_TEMPLATE_ID,
     };
   });
 }
 export default function RasiPostersScreen() {
   const {t} = useLanguage(); const router = useRouter(); const {store: studio} = useContentStudio();
-  const projects = useMemo(makeProjects, []); const [index, setIndex] = useState(0); const [saving, setSaving] = useState(false);
+  const initialProjects = useMemo(makeProjects, []); const [projects, setProjects] = useState(initialProjects); const [index, setIndex] = useState(0); const [saving, setSaving] = useState(false);
   const project = projects[index]; const category = project ? getCategory(project.categoryId) : undefined;
   if (!project || !category) return <SafeAreaView style={s.page}><View style={s.content}><Text style={s.title}>12 Rasi Posters</Text>
     <Text style={s.muted}>Generate all 12 Rasi first.</Text><AppButton title={t('create')} onPress={() => router.replace('/create')}/></View></SafeAreaView>;
@@ -49,7 +50,16 @@ export default function RasiPostersScreen() {
   return <SafeAreaView style={s.page}><ScrollView contentContainerStyle={s.content}>
     <Text style={s.kicker}>MAGIC 12 RASI</Text><Text style={s.title}>12 Poster Preview</Text>
     <Text style={s.counter}>{index + 1} / 12</Text>
-    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} variant={index % 5} font={0} background={index % 3} onReady={() => {}}/>
+    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} templateId={project.templateId} onReady={() => {}}/>
+    <Text style={s.sectionTitle}>Choose Template</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templates}>
+      {POSTER_TEMPLATES.map(template => <Pressable key={template.id} onPress={() => setProjects(current => current.map((item,i) => i===index ? {...item,templateId:template.id,updatedAt:new Date().toISOString()} : item))}
+        style={[s.templateCard, project.templateId===template.id&&s.templateSelected]}>
+        <Text style={s.templateIcon}>{template.icon}</Text><Text style={[s.templateName,project.templateId===template.id&&s.templateNameSelected]}>{template.name}</Text>
+      </Pressable>)}
+    </ScrollView>
+    <Pressable style={s.shuffle} onPress={() => {const current=POSTER_TEMPLATES.findIndex(t=>t.id===project.templateId); const next=POSTER_TEMPLATES[(current+1)%POSTER_TEMPLATES.length];
+      setProjects(items=>items.map((item,i)=>i===index?{...item,templateId:next.id,updatedAt:new Date().toISOString()}:item));}}><Text style={s.secondaryText}>✨ Change Design</Text></Pressable>
     <Pressable onPress={edit} style={s.secondary}><Text style={s.secondaryText}>Edit Content</Text></Pressable>
     <View style={s.row}><Pressable disabled={index === 0} onPress={() => setIndex(value => value - 1)} style={[s.nav,index===0&&s.disabled]}><Text style={s.navText}>Previous</Text></Pressable>
       <Pressable disabled={index === 11} onPress={() => setIndex(value => value + 1)} style={[s.nav,index===11&&s.disabled]}><Text style={s.navText}>Next</Text></Pressable></View>
@@ -60,4 +70,4 @@ const s=StyleSheet.create({page:{flex:1,backgroundColor:theme.colors.bg},content
   kicker:{color:theme.colors.gold,fontWeight:'900',letterSpacing:2},title:{color:theme.colors.text,fontSize:30,fontWeight:'900'},
   counter:{color:theme.colors.goldLight,fontWeight:'800',textAlign:'center',fontSize:18},muted:{color:theme.colors.muted},
   row:{flexDirection:'row',gap:12},nav:{flex:1,padding:16,borderRadius:14,backgroundColor:theme.colors.surface,alignItems:'center',borderWidth:1,borderColor:theme.colors.border},
-  navText:{color:theme.colors.goldLight,fontWeight:'800'},disabled:{opacity:.35},secondary:{padding:15,alignItems:'center'},secondaryText:{color:theme.colors.gold,fontWeight:'900'}});
+  navText:{color:theme.colors.goldLight,fontWeight:'800'},disabled:{opacity:.35},secondary:{padding:15,alignItems:'center'},secondaryText:{color:theme.colors.gold,fontWeight:'900'},sectionTitle:{color:theme.colors.text,fontSize:18,fontWeight:'900'},templates:{gap:10,paddingVertical:4},templateCard:{width:116,minHeight:86,padding:12,borderRadius:16,backgroundColor:theme.colors.surface,borderWidth:1,borderColor:theme.colors.border,justifyContent:'center',alignItems:'center',gap:6},templateSelected:{borderColor:theme.colors.gold,backgroundColor:'#211B16'},templateIcon:{fontSize:22},templateName:{color:theme.colors.muted,fontWeight:'800',textAlign:'center'},templateNameSelected:{color:theme.colors.goldLight},shuffle:{padding:14,borderRadius:14,borderWidth:1,borderColor:theme.colors.gold,alignItems:'center'}});
