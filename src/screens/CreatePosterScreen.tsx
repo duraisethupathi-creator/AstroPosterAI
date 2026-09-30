@@ -20,6 +20,7 @@ import {useContentStudio} from '../providers/ContentStudioProvider';
 import {isStudioDirty} from '../state/contentStudioStore';
 import {confirmStudioReplacement} from '../components/confirmStudioReplacement';
 import {logAIEvent} from '../services/ai/debug';
+import {rasiStore} from '../features/rasi/rasiStore';
 
 export function CreatePosterScreen() {
   const {language, t} = useLanguage();
@@ -63,7 +64,12 @@ export function CreatePosterScreen() {
     if (isStudioDirty(studio.getSnapshot()) && !await confirmStudioReplacement(t)) return;
     logAIEvent('button pressed');
     prepare();
-    if (result.ok && !brandBlocked && !form.generateAllZodiacs) {
+    if (result.ok && !brandBlocked) {
+      if (form.generateAllZodiacs) {
+        rasiStore.prepare(result.request);
+        router.push('/rasi-results');
+        return;
+      }
       const generated = await generation.generate();
       if (generated) { studio.start(result.request, generated); router.push('/studio'); }
     }
@@ -131,9 +137,8 @@ export function CreatePosterScreen() {
             {brandBlocked ? <Text style={s.hint}>{t(brandLoading ? 'loading' : 'brandLoadError')}</Text>
               : !hasSavedBrand ? <Text style={s.hint}>{t('astro.noSavedBrand')}</Text> : null}
             <AppButton title={t('astro.prepareRequest')} disabled={brandBlocked} onPress={prepare}/>
-            {form.generateAllZodiacs ? <Text style={s.hint}>{t('ai.bulkLater')}</Text> : null}
-            {!generation.error ? <AppButton title={t(generation.loading ? 'ai.generating' : 'ai.generate')}
-              disabled={brandBlocked || generation.loading || form.generateAllZodiacs} onPress={generate}/> : null}
+            {!generation.error ? <AppButton title={form.generateAllZodiacs ? t('rasi12.generate') : t(generation.loading ? 'ai.generating' : 'ai.generate')}
+              disabled={brandBlocked || generation.loading} onPress={generate}/> : null}
           </View>
           {submitted && result.ok && !brandBlocked ? <View style={s.section}
             key={generation.loading ? 'loading' : generation.error ? 'error' : generation.result ? 'result' : 'preview'}
