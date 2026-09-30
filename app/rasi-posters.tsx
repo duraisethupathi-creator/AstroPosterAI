@@ -49,7 +49,7 @@ export default function RasiPostersScreen() {
   return <SafeAreaView style={s.page}><ScrollView contentContainerStyle={s.content}>
     <Text style={s.kicker}>MAGIC 12 RASI</Text><Text style={s.title}>12 Poster Preview</Text>
     <Text style={s.counter}>{index + 1} / 12</Text>
-    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} variant={index % 5} font={0} background={index % 3}/>
+    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} variant={index % 5} font={0} background={index % 3} onReady={() => {}}/>
     <Pressable onPress={edit} style={s.secondary}><Text style={s.secondaryText}>Edit Content</Text></Pressable>
     <View style={s.row}><Pressable disabled={index === 0} onPress={() => setIndex(value => value - 1)} style={[s.nav,index===0&&s.disabled]}><Text style={s.navText}>Previous</Text></Pressable>
       <Pressable disabled={index === 11} onPress={() => setIndex(value => value + 1)} style={[s.nav,index===11&&s.disabled]}><Text style={s.navText}>Next</Text></Pressable></View>
