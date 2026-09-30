@@ -1,4 +1,4 @@
-import {generateAstrologyContent} from '../../services/ai/aiClient';
+import {generateLocalRasiContent} from './localRasiGenerator';
 import {ZODIACS, type ZodiacId} from '../astrology/zodiac';
 import type {AstrologyGenerationRequest} from '../astrology/types';
 import type {RasiBatch, RasiItem} from './types';
@@ -31,7 +31,7 @@ async function runQueue(ids: ZodiacId[], concurrency = 3) {
       if (!item) continue;
       replaceItem(zodiacId, {status: 'generating', error: undefined});
       try {
-        const result = await generateAstrologyContent(item.request);
+        const result = await generateLocalRasiContent(item.request);
         if (!state || myRun !== runId || state.cancelled) return;
         if (result.zodiacId !== zodiacId) throw new Error('ZODIAC_MISMATCH');
         replaceItem(zodiacId, {status: 'success', result});
