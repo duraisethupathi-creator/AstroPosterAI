@@ -27,6 +27,10 @@ export function PosterEditorScreen() {
   const [variant, setVariant] = useState(0);
   const [font, setFont] = useState(0);
   const [background, setBackground] = useState(0);
+  const [selectedElement,setSelectedElement]=useState<'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer'>('title');
+  const [elementScale,setElementScale]=useState(1);
+  const [elementRotation,setElementRotation]=useState(0);
+  const [elementOpacity,setElementOpacity]=useState(1);
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -76,10 +80,24 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
-          sections={sections} brand={brand} variant={variant} font={font} background={background}
+          sections={sections} brand={brand} variant={variant} font={font} background={background} editable onElementPress={element=>{setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
+          <View style={s.stage9}>
+            <Text style={s.stage9Title}>Selected: {selectedElement}</Text>
+            <Text style={s.controlLabel}>Tap logo, profile/deity, brand, zodiac, title, content or footer on the poster.</Text>
+            <View style={s.actions}>
+              <Pressable style={s.button} onPress={()=>setElementScale(v=>Math.max(.5,+(v-.1).toFixed(1)))}><Text style={s.buttonText}>− Size</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>setElementScale(v=>Math.min(2,+(v+.1).toFixed(1)))}><Text style={s.buttonText}>+ Size</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>setElementRotation(v=>(v+15)%360)}><Text style={s.buttonText}>Rotate</Text></Pressable>
+            </View>
+            <View style={s.actions}>
+              <Pressable style={s.button} onPress={()=>setElementOpacity(v=>v<.8?1:.65)}><Text style={s.buttonText}>Opacity {Math.round(elementOpacity*100)}%</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>{setElementScale(1);setElementRotation(0);setElementOpacity(1)}}><Text style={s.buttonText}>Reset</Text></Pressable>
+            </View>
+            <Text style={s.controlLabel}>Stage 9 controls active · Size {Math.round(elementScale*100)}% · Rotation {elementRotation}°</Text>
+          </View>
           <View style={s.actions}>
             {control(t('preview.style'), t(variants[variant]), () => setVariant(value => (value + 1) % variants.length))}
             {control(t('zodiac'), badge ?? t('zodiac'), () => Alert.alert(t('zodiac'), t('preview.zodiacHint'), [
@@ -111,6 +129,7 @@ const s = StyleSheet.create({
   page: {flex: 1, backgroundColor: '#090B14'}, content: {padding: 20, alignItems: 'stretch'},
   title: {color: '#FFF', fontSize: 27, fontWeight: '900'}, heading: {color: '#E8C97D', fontSize: 17, fontWeight: '700', marginVertical: 16},
   controls: {marginTop: 24, borderTopWidth: 1, borderTopColor: '#393345'},
+  stage9:{padding:12,borderWidth:1,borderColor:'#D6B46A',borderRadius:14,marginBottom:14,gap:8},stage9Title:{color:'#E8C97D',fontWeight:'900',fontSize:16},
   actions: {flexDirection: 'row', gap: 10, marginBottom: 10},
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
