@@ -4,6 +4,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useRouter} from 'expo-router';
 import {AppButton} from '../src/components/AppButton';
 import {PosterCanvas} from '../src/components/PosterCanvas';
+import {DeityPicker} from '../src/components/DeityPicker';
+import {DEFAULT_DEITY_SELECTION} from '../src/features/deities/types';
+import {DEITIES} from '../src/features/deities/deities';
 import {useLanguage} from '../src/i18n/LanguageProvider';
 import {translate} from '../src/i18n';
 import {getCategory} from '../src/features/astrology/categories';
@@ -26,7 +29,7 @@ function makeProjects(): PosterProject[] {
       zodiacId: item.zodiacId, zodiacName: translate(batch.baseRequest.language, zodiac.translationKey), zodiacSymbol: zodiac.symbol,
       language: item.result!.language, categoryId: item.request.categoryId, date: item.request.period?.date,
       content: JSON.parse(JSON.stringify(item.result!.content)), brand: item.request.brand,
-      request: JSON.parse(JSON.stringify(item.request)), templateId: DEFAULT_TEMPLATE_ID,
+      request: JSON.parse(JSON.stringify(item.request)), templateId: DEFAULT_TEMPLATE_ID, deity: {...DEFAULT_DEITY_SELECTION},
     };
   });
 }
@@ -50,7 +53,7 @@ export default function RasiPostersScreen() {
   return <SafeAreaView style={s.page}><ScrollView contentContainerStyle={s.content}>
     <Text style={s.kicker}>MAGIC 12 RASI</Text><Text style={s.title}>12 Poster Preview</Text>
     <Text style={s.counter}>{index + 1} / 12</Text>
-    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} templateId={project.templateId} onReady={() => {}}/>
+    <PosterCanvas width={330} title={title} badge={badge} sections={sections} brand={project.brand} templateId={project.templateId} deity={project.deity} onReady={() => {}}/>
     <Text style={s.sectionTitle}>Choose Template</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templates}>
       {POSTER_TEMPLATES.map(template => <Pressable key={template.id} onPress={() => setProjects(current => current.map((item,i) => i===index ? {...item,templateId:template.id,updatedAt:new Date().toISOString()} : item))}
@@ -58,6 +61,8 @@ export default function RasiPostersScreen() {
         <Text style={s.templateIcon}>{template.icon}</Text><Text style={[s.templateName,project.templateId===template.id&&s.templateNameSelected]}>{template.name}</Text>
       </Pressable>)}
     </ScrollView>
+    <DeityPicker value={project.deity} onChange={deity=>setProjects(items=>items.map((item,i)=>i===index?{...item,deity,updatedAt:new Date().toISOString()}:item))}/>
+    {project.deity?.mode==='manual'?<Pressable style={s.shuffle} onPress={()=>{const current=DEITIES.findIndex(d=>d.id===project.deity?.deityId);const next=DEITIES[(current+1+DEITIES.length)%DEITIES.length];setProjects(items=>items.map((item,i)=>i===index?{...item,deity:{...(item.deity??DEFAULT_DEITY_SELECTION),mode:'manual',deityId:next.id,uri:undefined},updatedAt:new Date().toISOString()}:item));}}><Text style={s.secondaryText}>✨ Change God Image</Text></Pressable>:null}
     <Pressable style={s.shuffle} onPress={() => {const current=POSTER_TEMPLATES.findIndex(t=>t.id===project.templateId); const next=POSTER_TEMPLATES[(current+1)%POSTER_TEMPLATES.length];
       setProjects(items=>items.map((item,i)=>i===index?{...item,templateId:next.id,updatedAt:new Date().toISOString()}:item));}}><Text style={s.secondaryText}>✨ Change Design</Text></Pressable>
     <Pressable onPress={edit} style={s.secondary}><Text style={s.secondaryText}>Edit Content</Text></Pressable>
