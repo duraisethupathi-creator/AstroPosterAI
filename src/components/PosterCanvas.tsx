@@ -41,4 +41,4 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   </View>;
 });
 const s=StyleSheet.create({canvas:{alignSelf:'center'},badge:{fontWeight:'700',includeFontPadding:true},title:{fontWeight:'800',marginTop:10,includeFontPadding:true},
- label:{fontWeight:'700',includeFontPadding:true},body:{includeFontPadding:true,flexShrink:1},brand:{marginTop:20,paddingTop:12,borderTopWidth:1}});
+ label:{fontWeight:'700',includeFontPadding:true},body:{includeFontPadding:true,flexShrink:1},brand:{marginTop:20,paddingTop:12,borderTopWidth:1},deity:{alignItems:'center',justifyContent:'center',marginBottom:8}});
