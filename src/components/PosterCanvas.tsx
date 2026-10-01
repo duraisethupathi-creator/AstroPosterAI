@@ -1,27 +1,31 @@
 import React, {forwardRef, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import type {BrandSnapshot} from '../types/brandProfile';
 import {getPosterTemplate} from '../features/templates/templates';
+import {effectiveDeity} from '../features/deities/deities';
+import type {DeitySelection} from '../features/deities/types';
 
 type Props = {
   width: number; title: string; badge?: string;
   sections: {key: string; label: string; text: string}[];
-  brand?: BrandSnapshot; templateId?: string; variant?: number; font?: number; background?: number;
+  brand?: BrandSnapshot; templateId?: string; variant?: number; font?: number; background?: number; deity?: DeitySelection;
   onReady?: (height: number) => void;
 };
 
 // Capture-only poster surface. Template changes are visual only: content and brand data stay untouched.
-export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,onReady},ref){
+export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady},ref){
   const template=getPosterTemplate(templateId);
   const [fontSize,setFontSize]=useState(Math.min(18,Math.max(14,width/23)));
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
+  const god=effectiveDeity(deity,templateId);
   const brandLines=brand?[brand.businessName,brand.astrologerName,brand.phone,brand.whatsapp,brand.address,brand.website]
     .filter((v,i,a)=>v.trim()&&a.indexOf(v)===i):[];
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
     backgroundColor:template.background,borderRadius:template.radius}]}>
     <View onLayout={({nativeEvent:{layout}})=>{const height=layout.height+2*(padding+template.borderWidth);
       if(height>width*1.6&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(height);}}>
+      {deity?.mode==='upload'&&deity.uri?<Image source={{uri:deity.uri}} resizeMode="contain" style={{width:'100%',height:Math.max(80,width*.24),opacity:deity.opacity,transform:[{rotate:`${deity.rotation}deg`},{scale:deity.scale}]}}/>:god?<View style={s.deity}><Text allowFontScaling={false} style={{fontSize:Math.max(34,width*.13)}}>{god.icon}</Text><Text allowFontScaling={false} style={{color:template.accent,fontWeight:'800'}}>{god.name}</Text></View>:null}
       {badge?<Text allowFontScaling={false} style={[s.badge,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
       <Text allowFontScaling={false} style={[s.title,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
       {sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*.9)}}>
