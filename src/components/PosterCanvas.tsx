@@ -21,7 +21,7 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
-  const headerImageSize=Math.max(52,Math.min(78,width*.18));
+  const headerImageSize=Math.max(60,Math.min(88,width*.205));
   const headerCenter=[brand?.businessName,brand?.astrologerName,brand?.address].filter(Boolean) as string[];
   const contactLines=brand?[brand.phone,brand.whatsapp,brand.website].filter((v,i,a)=>v.trim()&&a.indexOf(v)===i):[];
   const hasDeityUpload=deity?.mode==='upload'&&Boolean(deity.uri);
@@ -70,8 +70,8 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
 const s=StyleSheet.create({
   canvas:{alignSelf:'center'},
   header:{flexDirection:'row',alignItems:'center',paddingBottom:10,marginBottom:8,borderBottomWidth:1},
-  headerSide:{width:'23%',alignItems:'center',justifyContent:'center',minHeight:58},
-  headerCenter:{width:'54%',alignItems:'center',justifyContent:'center',paddingHorizontal:4},
+  headerSide:{width:'25%',alignItems:'center',justifyContent:'center',minHeight:68},
+  headerCenter:{width:'50%',alignItems:'center',justifyContent:'center',paddingHorizontal:8,gap:1},
   badge:{fontWeight:'700',includeFontPadding:true},
   title:{fontWeight:'800',marginTop:10,includeFontPadding:true},
   label:{fontWeight:'700',includeFontPadding:true},
