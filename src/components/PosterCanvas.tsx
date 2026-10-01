@@ -10,12 +10,13 @@ type Props = {
   sections: {key: string; label: string; text: string}[];
   brand?: BrandSnapshot; templateId?: string; variant?: number; font?: number; background?: number; deity?: DeitySelection;
   onReady?: (height: number) => void;
+  editable?: boolean; onElementPress?: (element: 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer') => void;
 };
 
 const DEVOTIONAL_FOOTER = 'இறையருளால் நன்மைகள் பெருகட்டும்';
 
 // Capture-only poster surface. Template changes are visual only: content and brand data stay untouched.
-export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady},ref){
+export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress},ref){
   const template=getPosterTemplate(templateId);
   const [fontSize,setFontSize]=useState(Math.min(18,Math.max(14,width/23)));
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
@@ -34,15 +35,15 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
       if(height>width*1.6&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(height);}}>
 
       {(brand?.logoUri||headerCenter.length||hasDeityUpload||showGod||rightProfileUri)?<View style={[s.header,{borderBottomColor:template.accent}]}>
-        <View style={s.headerSide}>
+        <View onTouchEnd={()=>editable&&onElementPress?.('logo')} style={s.headerSide}>
           {brand?.logoUri?<Image source={{uri:brand.logoUri}} resizeMode="contain" style={{width:headerImageSize,height:headerImageSize}}/>:null}
         </View>
-        <View style={s.headerCenter}>
+        <View onTouchEnd={()=>editable&&onElementPress?.('brand')} style={s.headerCenter}>
           {headerCenter.map((line,index)=><Text key={index} allowFontScaling={false} numberOfLines={index===2?2:1}
             style={{color:index===0?template.title:template.body,fontSize:index===0?Math.max(11,fontSize-1):Math.max(9,fontSize-3),
               lineHeight:index===0?18:15,fontWeight:index<2?'700':'400',textAlign:'center',fontFamily:family}}>{line}</Text>)}
         </View>
-        <View style={s.headerSide}>
+        <View onTouchEnd={()=>editable&&onElementPress?.(hasDeityUpload||showGod?'deity':'profile')} style={s.headerSide}>
           {hasDeityUpload?<Image source={{uri:deity!.uri!}} resizeMode="contain" style={{width:headerImageSize,height:headerImageSize,
             opacity:deity?.opacity??1,transform:[{rotate:`${deity?.rotation??0}deg`},{scale:deity?.scale??1}]}}/>
           :showGod?<View style={s.deity}><Text allowFontScaling={false} style={{fontSize:Math.max(30,headerImageSize*.55)}}>{god!.icon}</Text>
@@ -51,16 +52,16 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
         </View>
       </View>:null}
 
-      {badge?<Text allowFontScaling={false} style={[s.badge,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
-      <Text allowFontScaling={false} style={[s.title,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
-      {sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*.9)}}>
+      {badge?<Text onPress={()=>editable&&onElementPress?.('badge')} allowFontScaling={false} style={[s.badge,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
+      <Text onPress={()=>editable&&onElementPress?.('title')} allowFontScaling={false} style={[s.title,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
+      <View onTouchEnd={()=>editable&&onElementPress?.('content')}>{sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*.9)}}>
         <Text allowFontScaling={false} style={[s.label,{color:template.accent,fontSize,lineHeight,textAlign:template.align,fontFamily:family,
           textTransform:template.labelTransform}]}>{section.label}</Text>
         <Text allowFontScaling={false} textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
           style={[s.body,{color:template.body,fontSize,lineHeight,fontFamily:family,fontWeight:font===2?'600':'400',textAlign:template.align}]}>{section.text}</Text>
-      </View>)}
+      </View>)}</View>
 
-      <View style={[s.footer,{borderTopColor:template.accent}]}>
+      <View onTouchEnd={()=>editable&&onElementPress?.('footer')} style={[s.footer,{borderTopColor:template.accent}]}>
         <Text allowFontScaling={false} style={{color:template.accent,fontSize:Math.max(11,fontSize-2),lineHeight:20,textAlign:'center',fontWeight:'800',fontFamily:family}}>{DEVOTIONAL_FOOTER}</Text>
         {contactLines.length?<Text allowFontScaling={false} style={{color:template.body,fontSize:10,lineHeight:16,textAlign:'center',fontFamily:family}}>{contactLines.join('  •  ')}</Text>:null}
       </View>
