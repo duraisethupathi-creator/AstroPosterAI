@@ -19,13 +19,16 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
+  const deityHeight=Math.max(64,width*(deity?.height??.18));
+  const deityWidth=Math.max(72,width*(deity?.width??.28));
+  const deityOffset=Math.max(0,width*(deity?.y??.08));
   const brandLines=brand?[brand.businessName,brand.astrologerName,brand.phone,brand.whatsapp,brand.address,brand.website]
     .filter((v,i,a)=>v.trim()&&a.indexOf(v)===i):[];
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
     backgroundColor:template.background,borderRadius:template.radius}]}>
     <View onLayout={({nativeEvent:{layout}})=>{const height=layout.height+2*(padding+template.borderWidth);
       if(height>width*1.6&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(height);}}>
-      {deity?.mode==='upload'&&deity.uri?<Image source={{uri:deity.uri}} resizeMode="contain" style={{width:'100%',height:Math.max(80,width*.24),opacity:deity.opacity,transform:[{rotate:`${deity.rotation}deg`},{scale:deity.scale}]}}/>:god?<View style={s.deity}><Text allowFontScaling={false} style={{fontSize:Math.max(34,width*.13)}}>{god.icon}</Text><Text allowFontScaling={false} style={{color:template.accent,fontWeight:'800'}}>{god.name}</Text></View>:null}
+      {deity?.mode==='upload'&&deity.uri?<View style={{alignItems:'center',paddingTop:deityOffset}}><Image source={{uri:deity.uri}} resizeMode="contain" style={{width:deityWidth,height:deityHeight,opacity:deity.opacity,transform:[{rotate:`${deity.rotation}deg`},{scale:deity.scale}]}}/></View>:god?<View style={[s.deity,{paddingTop:deityOffset,opacity:deity?.opacity??1,transform:[{scale:deity?.scale??1}]}]}><Text allowFontScaling={false} style={{fontSize:Math.max(34,deityWidth*.48)}}>{god.icon}</Text><Text allowFontScaling={false} style={{color:template.accent,fontWeight:'800'}}>{god.name}</Text></View>:null}
       {badge?<Text allowFontScaling={false} style={[s.badge,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
       <Text allowFontScaling={false} style={[s.title,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
       {sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*.9)}}>
