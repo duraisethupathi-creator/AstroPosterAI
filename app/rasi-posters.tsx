@@ -29,7 +29,7 @@ function makeProjects(): PosterProject[] {
       zodiacId: item.zodiacId, zodiacName: translate(batch.baseRequest.language, zodiac.translationKey), zodiacSymbol: zodiac.symbol,
       language: item.result!.language, categoryId: item.request.categoryId, date: item.request.period?.date,
       content: JSON.parse(JSON.stringify(item.result!.content)), brand: item.request.brand,
-      request: JSON.parse(JSON.stringify(item.request)), templateId: DEFAULT_TEMPLATE_ID, deity: {...DEFAULT_DEITY_SELECTION},
+      request: JSON.parse(JSON.stringify(item.request)), templateId: POSTER_TEMPLATES[index % POSTER_TEMPLATES.length]?.id ?? DEFAULT_TEMPLATE_ID, deity: {...DEFAULT_DEITY_SELECTION},
     };
   });
 }
