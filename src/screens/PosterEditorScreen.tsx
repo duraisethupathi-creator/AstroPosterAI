@@ -38,6 +38,7 @@ export function PosterEditorScreen() {
   const [projectSaved,setProjectSaved]=useState(false);
   const [smartDesign,setSmartDesign]=useState(design?.smartDesign?.smartDesign??0);
   const [smartLayoutStep,setSmartLayoutStep]=useState(0);
+  const [templateId,setTemplateId]=useState(POSTER_TEMPLATES[design?.smartDesign?.smartDesign??0]?.id??POSTER_TEMPLATES[0].id);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
   const smartLayout=(seed:number):PosterEditorLayout=>{const mode=seed%4;const side=mode%2===0?1:-1;return {
@@ -50,7 +51,7 @@ export function PosterEditorScreen() {
     content:{...defaultTransform,x:mode===3?side*8:0,y:mode===2?10:0,scale:mode===0?.96:1},
     footer:{...defaultTransform,x:0,y:mode===1?-8:mode===3?8:2,scale:mode===2?.9:.96}
   };};
-  const applySmartDesign=()=>{const zodiacIndex=zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0;const next=(smartDesign+1+Math.max(0,zodiacIndex))%POSTER_TEMPLATES.length;setSmartDesign(next);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);};
+  const applySmartDesign=()=>{const zodiacIndex=zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0;const next=(smartDesign+1+Math.max(0,zodiacIndex))%POSTER_TEMPLATES.length;setSmartDesign(next);setTemplateId(POSTER_TEMPLATES[next].id);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);};
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -65,7 +66,7 @@ export function PosterEditorScreen() {
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
-  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, elementTransforms]);
+  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, templateId, font, variant, background, elementTransforms]);
   const [ready, setReady] = useState<{key: string; height: number}>();
   async function saveProject() {
     if (!design || !zodiac || savingProject) return;
@@ -119,7 +120,7 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
-          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:{...base,x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.y+dy))}}});}}
+          sections={sections} brand={brand} templateId={templateId} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:{...base,x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.y+dy))}}});}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
@@ -127,7 +128,7 @@ export function PosterEditorScreen() {
             <Text style={s.smartTitle}>✨ Smart Design</Text>
             <Text style={s.controlLabel}>One tap automatically balances style, font and background without changing your astrology content.</Text>
             <View style={s.actions}><Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={()=>{const next=(smartLayoutStep+1)%4;setSmartLayoutStep(next);setElementTransforms(smartLayout(next));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout · {smartLayoutStep+1}/4</Text></Pressable></View>
+            <Pressable accessibilityRole="button" onPress={()=>{const next=(smartLayoutStep+1)%4;setSmartLayoutStep(next);const templateIndex=(next+Math.max(0,zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0))%POSTER_TEMPLATES.length;setTemplateId(POSTER_TEMPLATES[templateIndex].id);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout · {smartLayoutStep+1}/4</Text></Pressable></View>
           </View>
           <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
             <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
