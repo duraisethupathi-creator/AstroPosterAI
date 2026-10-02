@@ -20,7 +20,7 @@ export type ContentDraft = {
   request: AstrologyGenerationRequest;
   version: StudioVersion;
 };
-export type DesignContent = {request: AstrologyGenerationRequest; version: StudioVersion; draftId?: string};
+export type DesignContent = {request: AstrologyGenerationRequest; version: StudioVersion; draftId?: string; projectId?: string; editorLayout?: import('../features/projects/types').PosterEditorLayout};
 
 export function resultLanguage(request: AstrologyGenerationRequest, action?: ContentAction): LanguageCode {
   return !action || action.operation === 'regenerate' ? request.language
