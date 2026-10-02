@@ -11,6 +11,7 @@ import {useContentStudio} from '../providers/ContentStudioProvider';
 import {getCategory} from '../features/astrology/categories';
 import {PosterCanvas} from '../components/PosterCanvas';
 import {hasZodiacConflict} from '../features/astrology/zodiacConsistency';
+import type {PosterEditorLayout, PosterElementId, PosterElementTransform} from '../features/projects/types';
 
 const variants = ['design.gold', 'design.temple', 'design.cosmic', 'design.traditional', 'design.modern'] as const satisfies readonly TranslationKey[];
 const fonts = ['preview.fontDefault', 'preview.fontSerif', 'preview.fontBold'] as const;
@@ -27,11 +28,11 @@ export function PosterEditorScreen() {
   const [variant, setVariant] = useState(0);
   const [font, setFont] = useState(0);
   const [background, setBackground] = useState(0);
-  const [selectedElement,setSelectedElement]=useState<'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer'>('title');
-  const [elementScale,setElementScale]=useState(1);
-  const [elementRotation,setElementRotation]=useState(0);
-  const [elementOpacity,setElementOpacity]=useState(1);
-  const [elementPosition,setElementPosition]=useState({x:0,y:0});
+  const [selectedElement,setSelectedElement]=useState<PosterElementId>('title');
+  const defaultTransform: PosterElementTransform={x:0,y:0,scale:1,rotation:0,opacity:1};
+  const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>({});
+  const currentTransform=elementTransforms[selectedElement]??defaultTransform;
+  const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -46,7 +47,7 @@ export function PosterEditorScreen() {
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
-  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, selectedElement, elementScale, elementRotation, elementOpacity, elementPosition]);
+  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, elementTransforms]);
   const [ready, setReady] = useState<{key: string; height: number}>();
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
@@ -81,7 +82,7 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
-          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransform={{scale:elementScale,rotation:elementRotation,opacity:elementOpacity,x:elementPosition.x,y:elementPosition.y}} onElementPress={element=>{if(element!==selectedElement){setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);setElementPosition({x:0,y:0});}}} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementPosition(p=>({x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,p.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,p.y+dy))}));}}
+          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:{...base,x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.y+dy))}}});}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
@@ -89,15 +90,15 @@ export function PosterEditorScreen() {
             <Text style={s.stage9Title}>Selected: {selectedElement}</Text>
             <Text style={s.controlLabel}>Tap logo, profile/deity, brand, zodiac, title, content or footer on the poster.</Text>
             <View style={s.actions}>
-              <Pressable style={s.button} onPress={()=>setElementScale(v=>Math.max(.5,+(v-.1).toFixed(1)))}><Text style={s.buttonText}>− Size</Text></Pressable>
-              <Pressable style={s.button} onPress={()=>setElementScale(v=>Math.min(2,+(v+.1).toFixed(1)))}><Text style={s.buttonText}>+ Size</Text></Pressable>
-              <Pressable style={s.button} onPress={()=>setElementRotation(v=>(v+15)%360)}><Text style={s.buttonText}>Rotate</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>patchSelected({scale:Math.max(.5,+(currentTransform.scale-.1).toFixed(1))})}><Text style={s.buttonText}>− Size</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>patchSelected({scale:Math.min(2,+(currentTransform.scale+.1).toFixed(1))})}><Text style={s.buttonText}>+ Size</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>patchSelected({rotation:(currentTransform.rotation+15)%360})}><Text style={s.buttonText}>Rotate</Text></Pressable>
             </View>
             <View style={s.actions}>
-              <Pressable style={s.button} onPress={()=>setElementOpacity(v=>v<.8?1:.65)}><Text style={s.buttonText}>Opacity {Math.round(elementOpacity*100)}%</Text></Pressable>
-              <Pressable style={s.button} onPress={()=>{setElementScale(1);setElementRotation(0);setElementOpacity(1);setElementPosition({x:0,y:0})}}><Text style={s.buttonText}>Reset</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>patchSelected({opacity:currentTransform.opacity<.8?1:.65})><Text style={s.buttonText}>Opacity {Math.round(currentTransform.opacity*100)}%</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>setElementTransforms(all=>({...all,[selectedElement]:defaultTransform}))}><Text style={s.buttonText}>Reset</Text></Pressable>
             </View>
-            <Text style={s.controlLabel}>Drag selected element directly on poster · Size {Math.round(elementScale*100)}% · Rotation {elementRotation}° · X {Math.round(elementPosition.x)} Y {Math.round(elementPosition.y)}</Text>
+            <Text style={s.controlLabel}>Drag selected element directly on poster · Size {Math.round(currentTransform.scale*100)}% · Rotation {currentTransform.rotation}° · X {Math.round(currentTransform.x)} Y {Math.round(currentTransform.y)}</Text>
           </View>
           <View style={s.actions}>
             {control(t('preview.style'), t(variants[variant]), () => setVariant(value => (value + 1) % variants.length))}
