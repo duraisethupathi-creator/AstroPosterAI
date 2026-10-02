@@ -23,6 +23,8 @@ async function write(projects: PosterProject[]) {
 }
 export const posterProjectStorage = {
   async list() { await queue; return read(); },
+  async get(id: string) { await queue; return (await read()).find(project => project.id === id); },
+  async listBatch(batchId: string) { await queue; return (await read()).filter(project => project.batchId === batchId); },
   saveAll(input: PosterProject[]) {
     const result = queue.then(async () => {
       if (!input.length || new Set(input.map(project => project.id)).size !== input.length) throw new Error('PROJECT_BATCH_INVALID');
