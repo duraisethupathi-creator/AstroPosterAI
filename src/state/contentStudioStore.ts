@@ -12,7 +12,10 @@ type Session = {request: AstrologyGenerationRequest; version: StudioVersion; pas
   draftId?: string; createdAt?: string; savedFingerprint?: string; projectId?: string; editorLayout?: PosterEditorLayout; smartDesign?: PosterSmartDesign};
 export type StudioState = {session?: Session; pending?: StudioCommand; error?: TranslationKey; lastCommand?: StudioCommand;
   saving: boolean; saveError: boolean; saved: boolean; design?: DesignContent};
-const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+const copy = <T,>(value: T): T => {
+  if (value === undefined || value === null) return value;
+  return JSON.parse(JSON.stringify(value)) as T;
+};
 const fingerprint = (version: StudioVersion) => JSON.stringify(version);
 export function isStudioDirty(state: StudioState) {
   return !!state.session && fingerprint(state.session.version) !== state.session.savedFingerprint;
