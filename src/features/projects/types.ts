@@ -5,6 +5,10 @@ import type {BrandSnapshot} from '../../types/brandProfile';
 import type {GeneratedContent} from '../../types/generation';
 import type {DeitySelection} from '../deities/types';
 
+export type PosterElementId = 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer';
+export type PosterElementTransform = {x:number;y:number;scale:number;rotation:number;opacity:number};
+export type PosterEditorLayout = Partial<Record<PosterElementId, PosterElementTransform>>;
+
 export type PosterProject = {
   id: string;
   batchId: string;
@@ -24,8 +28,9 @@ export type PosterProject = {
   backgroundId?: string;
   zodiacStyleId?: string;
   deity?: DeitySelection;
+  editorLayout?: PosterEditorLayout;
 };
 
-export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity'>> & {
+export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout'>> & {
   content?: Partial<Record<OutputSectionId, string>>;
 };
