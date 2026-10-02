@@ -13,6 +13,7 @@ import {PosterCanvas} from '../components/PosterCanvas';
 import {hasZodiacConflict} from '../features/astrology/zodiacConsistency';
 import type {PosterEditorLayout, PosterElementId, PosterElementTransform, PosterProject} from '../features/projects/types';
 import {posterProjectStorage} from '../services/storage/posterProjectStorage';
+import {POSTER_TEMPLATES} from '../features/templates/templates';
 
 const variants = ['design.gold', 'design.temple', 'design.cosmic', 'design.traditional', 'design.modern'] as const satisfies readonly TranslationKey[];
 const fonts = ['preview.fontDefault', 'preview.fontSerif', 'preview.fontBold'] as const;
@@ -35,8 +36,10 @@ export function PosterEditorScreen() {
   const [projectId,setProjectId]=useState<string|undefined>(design?.projectId);
   const [savingProject,setSavingProject]=useState(false);
   const [projectSaved,setProjectSaved]=useState(false);
+  const [smartDesign,setSmartDesign]=useState(0);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
+  const applySmartDesign=()=>{const next=(smartDesign+1)%POSTER_TEMPLATES.length;setSmartDesign(next);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms({});setProjectSaved(false);};
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -109,6 +112,11 @@ export function PosterEditorScreen() {
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
+          <View style={s.smartCard}>
+            <Text style={s.smartTitle}>✨ Smart Design</Text>
+            <Text style={s.controlLabel}>One tap automatically balances style, font and background without changing your astrology content.</Text>
+            <Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
+          </View>
           <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
             <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
           </Pressable>
@@ -157,6 +165,7 @@ const s = StyleSheet.create({
   page: {flex: 1, backgroundColor: '#090B14'}, content: {padding: 20, alignItems: 'stretch'},
   title: {color: '#FFF', fontSize: 27, fontWeight: '900'}, heading: {color: '#E8C97D', fontSize: 17, fontWeight: '700', marginVertical: 16},
   controls: {marginTop: 24, borderTopWidth: 1, borderTopColor: '#393345'},
+  smartCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:8},smartTitle:{color:'#E8C97D',fontSize:18,fontWeight:'900'},smartButton:{minHeight:48,borderRadius:13,backgroundColor:'#5B35D5',alignItems:'center',justifyContent:'center'},smartButtonText:{color:'#FFF',fontWeight:'900'},
   stage9:{padding:12,borderWidth:1,borderColor:'#D6B46A',borderRadius:14,marginBottom:14,gap:8},stage9Title:{color:'#E8C97D',fontWeight:'900',fontSize:16},
   actions: {flexDirection: 'row', gap: 10, marginBottom: 10},
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
