@@ -31,6 +31,7 @@ export function PosterEditorScreen() {
   const [elementScale,setElementScale]=useState(1);
   const [elementRotation,setElementRotation]=useState(0);
   const [elementOpacity,setElementOpacity]=useState(1);
+  const [elementPosition,setElementPosition]=useState({x:0,y:0});
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -45,7 +46,7 @@ export function PosterEditorScreen() {
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
-  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, selectedElement, elementScale, elementRotation, elementOpacity]);
+  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, selectedElement, elementScale, elementRotation, elementOpacity, elementPosition]);
   const [ready, setReady] = useState<{key: string; height: number}>();
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
@@ -80,7 +81,7 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
-          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransform={{scale:elementScale,rotation:elementRotation,opacity:elementOpacity}} onElementPress={element=>{setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);}}
+          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransform={{scale:elementScale,rotation:elementRotation,opacity:elementOpacity,x:elementPosition.x,y:elementPosition.y}} onElementPress={element=>{if(element!==selectedElement){setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);setElementPosition({x:0,y:0});}}} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementPosition(p=>({x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,p.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,p.y+dy))}));}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
@@ -94,9 +95,9 @@ export function PosterEditorScreen() {
             </View>
             <View style={s.actions}>
               <Pressable style={s.button} onPress={()=>setElementOpacity(v=>v<.8?1:.65)}><Text style={s.buttonText}>Opacity {Math.round(elementOpacity*100)}%</Text></Pressable>
-              <Pressable style={s.button} onPress={()=>{setElementScale(1);setElementRotation(0);setElementOpacity(1)}}><Text style={s.buttonText}>Reset</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>{setElementScale(1);setElementRotation(0);setElementOpacity(1);setElementPosition({x:0,y:0})}}><Text style={s.buttonText}>Reset</Text></Pressable>
             </View>
-            <Text style={s.controlLabel}>Stage 9 controls active · Size {Math.round(elementScale*100)}% · Rotation {elementRotation}°</Text>
+            <Text style={s.controlLabel}>Drag selected element directly on poster · Size {Math.round(elementScale*100)}% · Rotation {elementRotation}° · X {Math.round(elementPosition.x)} Y {Math.round(elementPosition.y)}</Text>
           </View>
           <View style={s.actions}>
             {control(t('preview.style'), t(variants[variant]), () => setVariant(value => (value + 1) % variants.length))}
