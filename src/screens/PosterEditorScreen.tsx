@@ -18,6 +18,7 @@ import {POSTER_TEMPLATES} from '../features/templates/templates';
 const variants = ['design.gold', 'design.temple', 'design.cosmic', 'design.traditional', 'design.modern'] as const satisfies readonly TranslationKey[];
 const fonts = ['preview.fontDefault', 'preview.fontSerif', 'preview.fontBold'] as const;
 const backgrounds = ['preview.backgroundNight', 'preview.backgroundPlum', 'preview.backgroundForest'] as const;
+const exportPresets=[{id:'portrait',name:'Instagram Portrait',w:1080,h:1350},{id:'square',name:'Square',w:1080,h:1080},{id:'story',name:'Story / WhatsApp',w:1080,h:1920},{id:'facebook',name:'Facebook',w:1200,h:1500}] as const;
 
 export function PosterEditorScreen() {
   const {t, language} = useLanguage();
@@ -58,6 +59,8 @@ export function PosterEditorScreen() {
   const exportLock = useRef(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [exportPreset,setExportPreset]=useState(0);
+  const [exportQuality,setExportQuality]=useState<'standard'|'high'|'max'>('high');
   const posterWidth = Math.min(560, Math.max(1, width - 40));
   const sections = category && design ? category.outputSections.map(key => ({
     key, label: translate(contentLanguage, `output.${key}`), text: design.version.content[key] ?? '',
@@ -94,9 +97,10 @@ export function PosterEditorScreen() {
     let uri: string | undefined;
     try {
       if (!await Sharing.isAvailableAsync()) throw new Error('Unavailable');
-      // Bound bitmap memory for unusually tall posters. Capture this view, never the screen.
-      const scale = Math.min(1080 / posterWidth, 8192 / ready.height, Math.sqrt(8000000 / (posterWidth * ready.height)));
-      uri = await captureRef(canvas, {format, quality: 1, result: 'tmpfile',
+      const preset=exportPresets[exportPreset]; const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;
+      const targetW=Math.min(preset.w,exportQuality==='standard'?900:preset.w);
+      const scale=Math.min(targetW/posterWidth,8192/ready.height,Math.sqrt(12000000/(posterWidth*ready.height)));
+      uri = await captureRef(canvas, {format, quality:q, result: 'tmpfile',
         width: Math.round(posterWidth * scale), height: Math.round(ready.height * scale)});
       await Sharing.shareAsync(uri, {mimeType: format === 'png' ? 'image/png' : 'image/jpeg',
         UTI: format === 'png' ? 'public.png' : 'public.jpeg'});
@@ -160,7 +164,13 @@ export function PosterEditorScreen() {
             {control(t('font'), t(fonts[font]), () => setFont(value => (value + 1) % fonts.length))}
             {control(t('background'), t(backgrounds[background]), () => setBackground(value => (value + 1) % backgrounds.length))}
           </View>
-          {exportError ? <Text accessibilityRole="alert" style={s.error}>{t('preview.exportFailed')}</Text> : null}
+          <View style={s.exportCard}>
+            <Text style={s.stage9Title}>Professional Export</Text>
+            <Text style={s.controlLabel}>Preset · {exportPresets[exportPreset].name} · {exportPresets[exportPreset].w}×{exportPresets[exportPreset].h}</Text>
+            <View style={s.actions}>{exportPresets.map((p,i)=><Pressable key={p.id} onPress={()=>setExportPreset(i)} style={[s.exportChip,exportPreset===i&&s.exportChipOn]}><Text style={exportPreset===i?s.exportChipTextOn:s.exportChipText}>{p.name}</Text></Pressable>)}</View>
+            <Text style={s.controlLabel}>Quality</Text><View style={s.actions}>{(['standard','high','max'] as const).map(q=><Pressable key={q} onPress={()=>setExportQuality(q)} style={[s.exportChip,exportQuality===q&&s.exportChipOn]}><Text style={exportQuality===q?s.exportChipTextOn:s.exportChipText}>{q[0].toUpperCase()+q.slice(1)}</Text></Pressable>)}</View>
+          </View>
+                    {exportError ? <Text accessibilityRole="alert" style={s.error}>{t('preview.exportFailed')}</Text> : null}
           {exporting ? <Text accessibilityLiveRegion="polite" style={s.controlLabel}>{t('preview.exporting')}</Text> : null}
           <View style={s.actions}>
             {(['png', 'jpg'] as const).map(format => <Pressable key={format} accessibilityRole="button"
@@ -184,6 +194,7 @@ const s = StyleSheet.create({
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
   saveProject:{minHeight:52,backgroundColor:'#E8C97D',borderRadius:15,alignItems:'center',justifyContent:'center',marginBottom:14}, saveProjectText:{color:'#111',fontWeight:'900',fontSize:16},
+  exportCard:{padding:14,borderWidth:1,borderColor:'#393345',borderRadius:16,marginBottom:14,gap:8},exportChip:{flex:1,minWidth:120,padding:10,borderWidth:1,borderColor:'#393345',borderRadius:11,alignItems:'center'},exportChipOn:{backgroundColor:'#E8C97D'},exportChipText:{color:'#AAA7B7',fontSize:11,fontWeight:'700'},exportChipTextOn:{color:'#111',fontSize:11,fontWeight:'900'},
   export: {flex: 1, minHeight: 48, backgroundColor: '#D6B46A', padding: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
   exportText: {color: '#111', fontWeight: '800', textAlign: 'center'}, disabled: {opacity: 0.45}, error: {color: '#FFB0A4', marginVertical: 10},
 });
