@@ -62,6 +62,7 @@ export function PosterEditorScreen() {
   const [exportError, setExportError] = useState(false);
   const [exportPreset,setExportPreset]=useState(0);
   const [exportQuality,setExportQuality]=useState<'standard'|'high'|'max'>('high');
+  const [batchCount,setBatchCount]=useState(0);
   const posterWidth = Math.min(560, Math.max(1, width - 40));
   const sections = category && design ? category.outputSections.map(key => ({
     key, label: translate(contentLanguage, `output.${key}`), text: design.version.content[key] ?? '',
@@ -94,6 +95,7 @@ export function PosterEditorScreen() {
   async function capturePoster(format:'png'|'jpg',presetIndex=exportPreset){if(ready?.key!==layoutKey||!canvas.current)throw new Error('NOT_READY');const preset=exportPresets[presetIndex];const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;const targetW=Math.min(preset.w,exportQuality==='standard'?900:preset.w);const scale=Math.min(targetW/posterWidth,8192/ready.height,Math.sqrt(12000000/(posterWidth*ready.height)));return captureRef(canvas,{format,quality:q,result:'tmpfile',width:Math.round(posterWidth*scale),height:Math.round(ready.height*scale)});}
   async function saveGallery(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);let uri:string|undefined;try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');uri=await capturePoster('png');await MediaLibrary.saveToLibraryAsync(uri);Alert.alert('Saved','Poster saved to your gallery.');}catch{setExportError(true);}finally{if(uri)releaseCapture(uri);exportLock.current=false;setExporting(false);}}
   async function exportAllSizes(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');for(let i=0;i<exportPresets.length;i++){const uri=await capturePoster('png',i);try{await MediaLibrary.saveToLibraryAsync(uri);}finally{releaseCapture(uri);}}Alert.alert('Export Complete',`Saved ${exportPresets.length} sizes to gallery.`);}catch{setExportError(true);}finally{exportLock.current=false;setExporting(false);}}
+  async function inspectBatch(){if(!projectId)return;const current=await posterProjectStorage.get(projectId);if(!current)return;const batch=await posterProjectStorage.listBatch(current.batchId);setBatchCount(batch.length);Alert.alert('12-Rasi Batch',batch.length>1?String(batch.length)+' saved posters found. Open 12-Rasi Batches in My Projects to export each saved poster safely.':'This project is not part of a multi-poster batch.');}
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
     exportLock.current = true;
@@ -174,7 +176,7 @@ export function PosterEditorScreen() {
             <Pressable disabled={exporting||ready?.key!==layoutKey} onPress={()=>void saveGallery()} style={[s.export,(exporting||ready?.key!==layoutKey)&&s.disabled]}><Text style={s.exportText}>Save to Gallery</Text></Pressable>
             <Pressable disabled={exporting||ready?.key!==layoutKey} onPress={()=>void exportAllSizes()} style={[s.export,(exporting||ready?.key!==layoutKey)&&s.disabled]}><Text style={s.exportText}>Export All Sizes</Text></Pressable>
           </View>
-          {projectId?<Text style={s.controlLabel}>12-Rasi batch export foundation ready via saved project batch. Full multi-poster rendering is next.</Text>:null}
+          {projectId?<View style={s.batchExport}><Text style={s.stage9Title}>12-Rasi Batch Export</Text><Text style={s.controlLabel}>{batchCount?String(batchCount)+' posters detected':'Check the saved batch before exporting.'}</Text><Pressable disabled={exporting} onPress={()=>void inspectBatch()} style={s.smartButton}><Text style={s.smartButtonText}>Check Saved Batch</Text></Pressable><Text style={s.controlLabel}>Batch safety mode keeps every Rasi own text, zodiac and saved design. Export individual posters from the saved batch; no content is substituted during capture.</Text></View>:null}
           {exportError ? <Text accessibilityRole="alert" style={s.error}>{t('preview.exportFailed')}</Text> : null}
           {exporting ? <Text accessibilityLiveRegion="polite" style={s.controlLabel}>{t('preview.exporting')}</Text> : null}
           <View style={s.actions}>
@@ -199,6 +201,7 @@ const s = StyleSheet.create({
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
   saveProject:{minHeight:52,backgroundColor:'#E8C97D',borderRadius:15,alignItems:'center',justifyContent:'center',marginBottom:14}, saveProjectText:{color:'#111',fontWeight:'900',fontSize:16},
+  batchExport:{padding:14,borderWidth:1,borderColor:'#7C5CFF',borderRadius:16,marginBottom:14,gap:8},
   exportCard:{padding:14,borderWidth:1,borderColor:'#393345',borderRadius:16,marginBottom:14,gap:8},exportChip:{flex:1,minWidth:120,padding:10,borderWidth:1,borderColor:'#393345',borderRadius:11,alignItems:'center'},exportChipOn:{backgroundColor:'#E8C97D'},exportChipText:{color:'#AAA7B7',fontSize:11,fontWeight:'700'},exportChipTextOn:{color:'#111',fontSize:11,fontWeight:'900'},
   export: {flex: 1, minHeight: 48, backgroundColor: '#D6B46A', padding: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
   exportText: {color: '#111', fontWeight: '800', textAlign: 'center'}, disabled: {opacity: 0.45}, error: {color: '#FFB0A4', marginVertical: 10},
