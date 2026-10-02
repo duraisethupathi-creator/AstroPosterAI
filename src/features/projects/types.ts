@@ -31,8 +31,10 @@ export type PosterProject = {
   deity?: DeitySelection;
   editorLayout?: PosterEditorLayout;
   smartDesign?: PosterSmartDesign;
+  name?: string;
+  favorite?: boolean;
 };
 
-export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign'>> & {
+export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign' | 'name' | 'favorite'>> & {
   content?: Partial<Record<OutputSectionId, string>>;
 };
