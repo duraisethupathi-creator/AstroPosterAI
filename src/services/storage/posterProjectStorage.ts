@@ -36,6 +36,28 @@ export const posterProjectStorage = {
     queue = result.catch(() => {});
     return result;
   },
+  remove(id: string) {
+    const result = queue.then(async () => {
+      const projects = await read(); const next = projects.filter(project => project.id !== id);
+      if (next.length === projects.length) throw new Error('PROJECT_NOT_FOUND');
+      await write(next); return true;
+    }); queue = result.catch(() => {}); return result;
+  },
+  removeBatch(batchId: string) {
+    const result = queue.then(async () => {
+      const projects = await read(); const next = projects.filter(project => project.batchId !== batchId);
+      await write(next); return projects.length - next.length;
+    }); queue = result.catch(() => {}); return result;
+  },
+  duplicate(id: string) {
+    const result = queue.then(async () => {
+      const projects = await read(); const source = projects.find(project => project.id === id);
+      if (!source) throw new Error('PROJECT_NOT_FOUND');
+      const now = new Date().toISOString(); const newId=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+      const duplicated: PosterProject={...copy(source),id:newId,batchId:newId,name:`${source.name ?? source.zodiacName} Copy`,createdAt:now,updatedAt:now};
+      const next=[duplicated,...projects]; if(next.length>250) next.length=250; await write(next); return copy(duplicated);
+    }); queue = result.catch(() => {}); return result;
+  },
   update(id: string, patch: PosterProjectUpdate) {
     const result = queue.then(async () => {
       const projects = await read();
