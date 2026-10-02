@@ -27,16 +27,16 @@ export function PosterEditorScreen() {
   const category = design ? getCategory(design.request.categoryId) : undefined;
   const contentLanguage = design?.version.language ?? language;
   // Presentation state never writes to the Studio, original request, or language provider.
-  const [variant, setVariant] = useState(0);
-  const [font, setFont] = useState(0);
-  const [background, setBackground] = useState(0);
+  const [variant, setVariant] = useState(design?.smartDesign?.variant??0);
+  const [font, setFont] = useState(design?.smartDesign?.font??0);
+  const [background, setBackground] = useState(design?.smartDesign?.background??0);
   const [selectedElement,setSelectedElement]=useState<PosterElementId>('title');
   const defaultTransform: PosterElementTransform={x:0,y:0,scale:1,rotation:0,opacity:1};
   const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>(()=>design?.editorLayout??{});
   const [projectId,setProjectId]=useState<string|undefined>(design?.projectId);
   const [savingProject,setSavingProject]=useState(false);
   const [projectSaved,setProjectSaved]=useState(false);
-  const [smartDesign,setSmartDesign]=useState(0);
+  const [smartDesign,setSmartDesign]=useState(design?.smartDesign?.smartDesign??0);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
   const smartLayout=(seed:number):PosterEditorLayout=>{const shift=((seed%5)-2)*3;return {
@@ -72,13 +72,13 @@ export function PosterEditorScreen() {
     const now=new Date().toISOString();
     try {
       if (projectId) {
-        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms});
+        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign}});
       } else {
         const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
         const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
           zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
           categoryId:design.request.categoryId,content:design.version.content,brand:design.request.brand,
-          request:design.request,editorLayout:elementTransforms};
+          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign}};
         await posterProjectStorage.saveAll([project]); setProjectId(id);
       }
       setProjectSaved(true);
