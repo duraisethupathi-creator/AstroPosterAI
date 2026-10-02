@@ -4,6 +4,7 @@ import type {BrandSnapshot} from '../types/brandProfile';
 import {getPosterTemplate} from '../features/templates/templates';
 import {effectiveDeity} from '../features/deities/deities';
 import type {DeitySelection} from '../features/deities/types';
+import type {PosterEditorLayout, PosterElementId} from '../features/projects/types';
 
 type Props = {
   width: number; title: string; badge?: string;
@@ -11,15 +12,15 @@ type Props = {
   brand?: BrandSnapshot; templateId?: string; variant?: number; font?: number; background?: number; deity?: DeitySelection;
   onReady?: (height: number) => void;
   editable?: boolean; onElementPress?: (element: 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer') => void;
-  selectedElement?: 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer';
-  elementTransform?: {scale:number;rotation:number;opacity:number;x?:number;y?:number};
+  selectedElement?: PosterElementId;
+  elementTransforms?: PosterEditorLayout;
   onElementMove?: (element: NonNullable<Props['selectedElement']>, dx:number, dy:number) => void;
 };
 
 const DEVOTIONAL_FOOTER = 'இறையருளால் நன்மைகள் பெருகட்டும்';
 
 // Capture-only poster surface. Template changes are visual only: content and brand data stay untouched.
-export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress,selectedElement,elementTransform,onElementMove},ref){
+export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress,selectedElement,elementTransforms,onElementMove},ref){
   const template=getPosterTemplate(templateId);
   const [fontSize,setFontSize]=useState(Math.min(18,Math.max(14,width/23)));
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
@@ -31,7 +32,7 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const hasDeityUpload=deity?.mode==='upload'&&Boolean(deity.uri);
   const showGod=Boolean(god)&&!hasDeityUpload;
   const rightProfileUri=!hasDeityUpload&&!showGod?brand?.profilePhotoUri:null;
-  const tx=(id: Props['selectedElement'])=>selectedElement===id&&elementTransform?{opacity:elementTransform.opacity,transform:[{translateX:elementTransform.x??0},{translateY:elementTransform.y??0},{rotate:`${elementTransform.rotation}deg`},{scale:elementTransform.scale}]}:undefined;
+  const tx=(id: Props['selectedElement'])=>{const value=id?elementTransforms?.[id]:undefined;return value?{opacity:value.opacity,transform:[{translateX:value.x},{translateY:value.y},{rotate:`${value.rotation}deg`},{scale:value.scale}]}:undefined;};
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
