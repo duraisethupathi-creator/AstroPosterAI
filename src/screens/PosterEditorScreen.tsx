@@ -11,7 +11,8 @@ import {useContentStudio} from '../providers/ContentStudioProvider';
 import {getCategory} from '../features/astrology/categories';
 import {PosterCanvas} from '../components/PosterCanvas';
 import {hasZodiacConflict} from '../features/astrology/zodiacConsistency';
-import type {PosterEditorLayout, PosterElementId, PosterElementTransform} from '../features/projects/types';
+import type {PosterEditorLayout, PosterElementId, PosterElementTransform, PosterProject} from '../features/projects/types';
+import {posterProjectStorage} from '../services/storage/posterProjectStorage';
 
 const variants = ['design.gold', 'design.temple', 'design.cosmic', 'design.traditional', 'design.modern'] as const satisfies readonly TranslationKey[];
 const fonts = ['preview.fontDefault', 'preview.fontSerif', 'preview.fontBold'] as const;
@@ -30,7 +31,10 @@ export function PosterEditorScreen() {
   const [background, setBackground] = useState(0);
   const [selectedElement,setSelectedElement]=useState<PosterElementId>('title');
   const defaultTransform: PosterElementTransform={x:0,y:0,scale:1,rotation:0,opacity:1};
-  const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>({});
+  const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>(()=>design?.editorLayout??{});
+  const [projectId,setProjectId]=useState<string|undefined>(design?.projectId);
+  const [savingProject,setSavingProject]=useState(false);
+  const [projectSaved,setProjectSaved]=useState(false);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
@@ -49,6 +53,25 @@ export function PosterEditorScreen() {
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
   const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, elementTransforms]);
   const [ready, setReady] = useState<{key: string; height: number}>();
+  async function saveProject() {
+    if (!design || !zodiac || savingProject) return;
+    setSavingProject(true); setProjectSaved(false);
+    const now=new Date().toISOString();
+    try {
+      if (projectId) {
+        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms});
+      } else {
+        const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+        const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
+          zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
+          categoryId:design.request.categoryId,date:design.request.date,content:design.version.content,brand:design.request.brand,
+          request:design.request,editorLayout:elementTransforms};
+        await posterProjectStorage.saveAll([project]); setProjectId(id);
+      }
+      setProjectSaved(true);
+    } catch { Alert.alert('Save Project','Could not save this project. Please try again.'); }
+    finally { setSavingProject(false); }
+  }
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
     exportLock.current = true;
@@ -86,6 +109,9 @@ export function PosterEditorScreen() {
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
+          <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
+            <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
+          </Pressable>
           <View style={s.stage9}>
             <Text style={s.stage9Title}>Selected: {selectedElement}</Text>
             <Text style={s.controlLabel}>Tap logo, profile/deity, brand, zodiac, title, content or footer on the poster.</Text>
@@ -135,6 +161,7 @@ const s = StyleSheet.create({
   actions: {flexDirection: 'row', gap: 10, marginBottom: 10},
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
+  saveProject:{minHeight:52,backgroundColor:'#E8C97D',borderRadius:15,alignItems:'center',justifyContent:'center',marginBottom:14}, saveProjectText:{color:'#111',fontWeight:'900',fontSize:16},
   export: {flex: 1, minHeight: 48, backgroundColor: '#D6B46A', padding: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
   exportText: {color: '#111', fontWeight: '800', textAlign: 'center'}, disabled: {opacity: 0.45}, error: {color: '#FFB0A4', marginVertical: 10},
 });
