@@ -4,6 +4,7 @@ import {useRouter} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {captureRef, releaseCapture} from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import {translate, type TranslationKey} from '../i18n';
 import {useLanguage} from '../i18n/LanguageProvider';
 import {ZODIACS} from '../features/astrology/zodiac';
@@ -90,6 +91,9 @@ export function PosterEditorScreen() {
     } catch { Alert.alert('Save Project','Could not save this project. Please try again.'); }
     finally { setSavingProject(false); }
   }
+  async function capturePoster(format:'png'|'jpg',presetIndex=exportPreset){if(ready?.key!==layoutKey||!canvas.current)throw new Error('NOT_READY');const preset=exportPresets[presetIndex];const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;const targetW=Math.min(preset.w,exportQuality==='standard'?900:preset.w);const scale=Math.min(targetW/posterWidth,8192/ready.height,Math.sqrt(12000000/(posterWidth*ready.height)));return captureRef(canvas,{format,quality:q,result:'tmpfile',width:Math.round(posterWidth*scale),height:Math.round(ready.height*scale)});}
+  async function saveGallery(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);let uri:string|undefined;try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');uri=await capturePoster('png');await MediaLibrary.saveToLibraryAsync(uri);Alert.alert('Saved','Poster saved to your gallery.');}catch{setExportError(true);}finally{if(uri)releaseCapture(uri);exportLock.current=false;setExporting(false);}}
+  async function exportAllSizes(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');for(let i=0;i<exportPresets.length;i++){const uri=await capturePoster('png',i);try{await MediaLibrary.saveToLibraryAsync(uri);}finally{releaseCapture(uri);}}Alert.alert('Export Complete',`Saved ${exportPresets.length} sizes to gallery.`);}catch{setExportError(true);}finally{exportLock.current=false;setExporting(false);}}
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
     exportLock.current = true;
@@ -97,11 +101,7 @@ export function PosterEditorScreen() {
     let uri: string | undefined;
     try {
       if (!await Sharing.isAvailableAsync()) throw new Error('Unavailable');
-      const preset=exportPresets[exportPreset]; const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;
-      const targetW=Math.min(preset.w,exportQuality==='standard'?900:preset.w);
-      const scale=Math.min(targetW/posterWidth,8192/ready.height,Math.sqrt(12000000/(posterWidth*ready.height)));
-      uri = await captureRef(canvas, {format, quality:q, result: 'tmpfile',
-        width: Math.round(posterWidth * scale), height: Math.round(ready.height * scale)});
+      uri = await capturePoster(format);
       await Sharing.shareAsync(uri, {mimeType: format === 'png' ? 'image/png' : 'image/jpeg',
         UTI: format === 'png' ? 'public.png' : 'public.jpeg'});
     } catch { setExportError(true); }
@@ -170,7 +170,12 @@ export function PosterEditorScreen() {
             <View style={s.actions}>{exportPresets.map((p,i)=><Pressable key={p.id} onPress={()=>setExportPreset(i)} style={[s.exportChip,exportPreset===i&&s.exportChipOn]}><Text style={exportPreset===i?s.exportChipTextOn:s.exportChipText}>{p.name}</Text></Pressable>)}</View>
             <Text style={s.controlLabel}>Quality</Text><View style={s.actions}>{(['standard','high','max'] as const).map(q=><Pressable key={q} onPress={()=>setExportQuality(q)} style={[s.exportChip,exportQuality===q&&s.exportChipOn]}><Text style={exportQuality===q?s.exportChipTextOn:s.exportChipText}>{q[0].toUpperCase()+q.slice(1)}</Text></Pressable>)}</View>
           </View>
-                    {exportError ? <Text accessibilityRole="alert" style={s.error}>{t('preview.exportFailed')}</Text> : null}
+                    <View style={s.actions}>
+            <Pressable disabled={exporting||ready?.key!==layoutKey} onPress={()=>void saveGallery()} style={[s.export,(exporting||ready?.key!==layoutKey)&&s.disabled]}><Text style={s.exportText}>Save to Gallery</Text></Pressable>
+            <Pressable disabled={exporting||ready?.key!==layoutKey} onPress={()=>void exportAllSizes()} style={[s.export,(exporting||ready?.key!==layoutKey)&&s.disabled]}><Text style={s.exportText}>Export All Sizes</Text></Pressable>
+          </View>
+          {projectId?<Text style={s.controlLabel}>12-Rasi batch export foundation ready via saved project batch. Full multi-poster rendering is next.</Text>:null}
+          {exportError ? <Text accessibilityRole="alert" style={s.error}>{t('preview.exportFailed')}</Text> : null}
           {exporting ? <Text accessibilityLiveRegion="polite" style={s.controlLabel}>{t('preview.exporting')}</Text> : null}
           <View style={s.actions}>
             {(['png', 'jpg'] as const).map(format => <Pressable key={format} accessibilityRole="button"
