@@ -8,6 +8,7 @@ import type {DeitySelection} from '../deities/types';
 export type PosterElementId = 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer';
 export type PosterElementTransform = {x:number;y:number;scale:number;rotation:number;opacity:number};
 export type PosterEditorLayout = Partial<Record<PosterElementId, PosterElementTransform>>;
+export type PosterSmartDesign = {variant:number;font:number;background:number;smartDesign:number};
 
 export type PosterProject = {
   id: string;
@@ -29,8 +30,9 @@ export type PosterProject = {
   zodiacStyleId?: string;
   deity?: DeitySelection;
   editorLayout?: PosterEditorLayout;
+  smartDesign?: PosterSmartDesign;
 };
 
-export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout'>> & {
+export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign'>> & {
   content?: Partial<Record<OutputSectionId, string>>;
 };
