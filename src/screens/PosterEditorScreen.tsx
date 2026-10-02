@@ -37,17 +37,18 @@ export function PosterEditorScreen() {
   const [savingProject,setSavingProject]=useState(false);
   const [projectSaved,setProjectSaved]=useState(false);
   const [smartDesign,setSmartDesign]=useState(design?.smartDesign?.smartDesign??0);
+  const [smartLayoutStep,setSmartLayoutStep]=useState(0);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
-  const smartLayout=(seed:number):PosterEditorLayout=>{const shift=((seed%5)-2)*3;return {
-    logo:{...defaultTransform,x:-shift,y:0,scale:.95},
-    brand:{...defaultTransform,x:0,y:seed%2?2:-2,scale:1},
-    profile:{...defaultTransform,x:shift,y:0,scale:.95},
-    deity:{...defaultTransform,x:shift,y:0,scale:.95},
-    badge:{...defaultTransform,x:seed%2?6:-6,y:4,scale:1.05},
-    title:{...defaultTransform,x:0,y:seed%3===0?4:0,scale:1.05},
-    content:{...defaultTransform,x:0,y:0,scale:1},
-    footer:{...defaultTransform,x:0,y:seed%2?-2:2,scale:.95}
+  const smartLayout=(seed:number):PosterEditorLayout=>{const mode=seed%4;const side=mode%2===0?1:-1;return {
+    logo:{...defaultTransform,x:-side*(12+mode*3),y:mode===2?6:0,scale:mode===1?1.08:.92},
+    brand:{...defaultTransform,x:0,y:mode===0?-8:mode===1?6:0,scale:mode===3?.94:1},
+    profile:{...defaultTransform,x:side*(12+mode*3),y:mode===2?6:0,scale:mode===1?1.08:.92},
+    deity:{...defaultTransform,x:side*(12+mode*3),y:mode===2?6:0,scale:mode===1?1.08:.92},
+    badge:{...defaultTransform,x:side*(mode===0?18:10),y:mode===1?10:-2,scale:mode===2?1.15:1.05},
+    title:{...defaultTransform,x:mode===3?side*12:0,y:mode===0?10:mode===2?-8:2,scale:mode===1?1.12:1.04},
+    content:{...defaultTransform,x:mode===3?side*8:0,y:mode===2?10:0,scale:mode===0?.96:1},
+    footer:{...defaultTransform,x:0,y:mode===1?-8:mode===3?8:2,scale:mode===2?.9:.96}
   };};
   const applySmartDesign=()=>{const zodiacIndex=zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0;const next=(smartDesign+1+Math.max(0,zodiacIndex))%POSTER_TEMPLATES.length;setSmartDesign(next);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);};
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
@@ -126,7 +127,7 @@ export function PosterEditorScreen() {
             <Text style={s.smartTitle}>✨ Smart Design</Text>
             <Text style={s.controlLabel}>One tap automatically balances style, font and background without changing your astrology content.</Text>
             <View style={s.actions}><Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={()=>{setElementTransforms(smartLayout(smartDesign));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout</Text></Pressable></View>
+            <Pressable accessibilityRole="button" onPress={()=>{const next=(smartLayoutStep+1)%4;setSmartLayoutStep(next);setElementTransforms(smartLayout(next));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout · {smartLayoutStep+1}/4</Text></Pressable></View>
           </View>
           <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
             <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
