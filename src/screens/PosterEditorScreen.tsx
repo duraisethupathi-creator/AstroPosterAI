@@ -64,7 +64,7 @@ export function PosterEditorScreen() {
         const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
         const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
           zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
-          categoryId:design.request.categoryId,date:design.request.date,content:design.version.content,brand:design.request.brand,
+          categoryId:design.request.categoryId,content:design.version.content,brand:design.request.brand,
           request:design.request,editorLayout:elementTransforms};
         await posterProjectStorage.saveAll([project]); setProjectId(id);
       }
