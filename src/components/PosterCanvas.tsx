@@ -58,8 +58,8 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
         </View>
       </View>:null}
 
-      {badge?<Text onPress={()=>editable&&onElementPress?.('badge')} allowFontScaling={false} style={[s.badge,tx('badge'),{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
-      <Text onPress={()=>editable&&onElementPress?.('title')} allowFontScaling={false} style={[s.title,tx('title'),{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
+      {badge?<Text {...pan('badge')} allowFontScaling={false} style={[s.badge,tx('badge'),selectedElement==='badge'&&s.selected,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
+      <Text {...pan('title')} allowFontScaling={false} style={[s.title,tx('title'),selectedElement==='title'&&s.selected,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
       <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*.9)}}>
         <Text allowFontScaling={false} style={[s.label,{color:template.accent,fontSize,lineHeight,textAlign:template.align,fontFamily:family,
           textTransform:template.labelTransform}]}>{section.label}</Text>
@@ -84,5 +84,6 @@ const s=StyleSheet.create({
   label:{fontWeight:'700',includeFontPadding:true},
   body:{includeFontPadding:true,flexShrink:1},
   footer:{marginTop:20,paddingTop:10,borderTopWidth:1,gap:2},
-  deity:{alignItems:'center',justifyContent:'center'}
+  deity:{alignItems:'center',justifyContent:'center'},
+  selected:{borderWidth:1,borderColor:'#E8C97D',borderRadius:6}
 });
