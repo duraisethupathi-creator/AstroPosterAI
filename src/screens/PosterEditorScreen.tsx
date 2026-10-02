@@ -45,7 +45,7 @@ export function PosterEditorScreen() {
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
-  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background]);
+  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, font, variant, background, selectedElement, elementScale, elementRotation, elementOpacity]);
   const [ready, setReady] = useState<{key: string; height: number}>();
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
@@ -80,7 +80,7 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
-          sections={sections} brand={brand} variant={variant} font={font} background={background} editable onElementPress={element=>{setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);}}
+          sections={sections} brand={brand} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransform={{scale:elementScale,rotation:elementRotation,opacity:elementOpacity}} onElementPress={element=>{setSelectedElement(element);setElementScale(1);setElementRotation(0);setElementOpacity(1);}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
