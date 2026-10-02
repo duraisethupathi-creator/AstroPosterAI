@@ -39,7 +39,17 @@ export function PosterEditorScreen() {
   const [smartDesign,setSmartDesign]=useState(0);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
-  const applySmartDesign=()=>{const next=(smartDesign+1)%POSTER_TEMPLATES.length;setSmartDesign(next);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms({});setProjectSaved(false);};
+  const smartLayout=(seed:number):PosterEditorLayout=>{const shift=((seed%5)-2)*3;return {
+    logo:{...defaultTransform,x:-shift,y:0,scale:.95},
+    brand:{...defaultTransform,x:0,y:seed%2?2:-2,scale:1},
+    profile:{...defaultTransform,x:shift,y:0,scale:.95},
+    deity:{...defaultTransform,x:shift,y:0,scale:.95},
+    badge:{...defaultTransform,x:seed%2?6:-6,y:4,scale:1.05},
+    title:{...defaultTransform,x:0,y:seed%3===0?4:0,scale:1.05},
+    content:{...defaultTransform,x:0,y:0,scale:1},
+    footer:{...defaultTransform,x:0,y:seed%2?-2:2,scale:.95}
+  };};
+  const applySmartDesign=()=>{const zodiacIndex=zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0;const next=(smartDesign+1+Math.max(0,zodiacIndex))%POSTER_TEMPLATES.length;setSmartDesign(next);setVariant(next%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);};
   const zodiac = ZODIACS.find(sign => sign.id === design?.request.zodiacId);
   const zodiacConflict = !!design && hasZodiacConflict(design.version.content, design.request.zodiacId);
   const canvas = useRef<View>(null);
@@ -115,7 +125,8 @@ export function PosterEditorScreen() {
           <View style={s.smartCard}>
             <Text style={s.smartTitle}>✨ Smart Design</Text>
             <Text style={s.controlLabel}>One tap automatically balances style, font and background without changing your astrology content.</Text>
-            <Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
+            <View style={s.actions}><Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={()=>{setElementTransforms(smartLayout(smartDesign));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout</Text></Pressable></View>
           </View>
           <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
             <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
@@ -165,7 +176,7 @@ const s = StyleSheet.create({
   page: {flex: 1, backgroundColor: '#090B14'}, content: {padding: 20, alignItems: 'stretch'},
   title: {color: '#FFF', fontSize: 27, fontWeight: '900'}, heading: {color: '#E8C97D', fontSize: 17, fontWeight: '700', marginVertical: 16},
   controls: {marginTop: 24, borderTopWidth: 1, borderTopColor: '#393345'},
-  smartCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:8},smartTitle:{color:'#E8C97D',fontSize:18,fontWeight:'900'},smartButton:{minHeight:48,borderRadius:13,backgroundColor:'#5B35D5',alignItems:'center',justifyContent:'center'},smartButtonText:{color:'#FFF',fontWeight:'900'},
+  smartCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:8},smartTitle:{color:'#E8C97D',fontSize:18,fontWeight:'900'},smartButton:{flex:1,minHeight:48,borderRadius:13,backgroundColor:'#5B35D5',alignItems:'center',justifyContent:'center',paddingHorizontal:10},smartButtonText:{color:'#FFF',fontWeight:'900'},
   stage9:{padding:12,borderWidth:1,borderColor:'#D6B46A',borderRadius:14,marginBottom:14,gap:8},stage9Title:{color:'#E8C97D',fontWeight:'900',fontSize:16},
   actions: {flexDirection: 'row', gap: 10, marginBottom: 10},
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
