@@ -21,7 +21,15 @@
           "microphonePermission": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow AstroPoster AI to access your photos.",
+          "savePhotosPermission": "Allow AstroPoster AI to save posters to your gallery.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "scheme": "astroposterai"
   }
