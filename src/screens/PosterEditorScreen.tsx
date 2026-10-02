@@ -95,7 +95,7 @@ export function PosterEditorScreen() {
               <Pressable style={s.button} onPress={()=>patchSelected({rotation:(currentTransform.rotation+15)%360})}><Text style={s.buttonText}>Rotate</Text></Pressable>
             </View>
             <View style={s.actions}>
-              <Pressable style={s.button} onPress={()=>patchSelected({opacity:currentTransform.opacity<.8?1:.65})><Text style={s.buttonText}>Opacity {Math.round(currentTransform.opacity*100)}%</Text></Pressable>
+              <Pressable style={s.button} onPress={()=>patchSelected({opacity:currentTransform.opacity<.8?1:.65})}><Text style={s.buttonText}>Opacity {Math.round(currentTransform.opacity*100)}%</Text></Pressable>
               <Pressable style={s.button} onPress={()=>setElementTransforms(all=>({...all,[selectedElement]:defaultTransform}))}><Text style={s.buttonText}>Reset</Text></Pressable>
             </View>
             <Text style={s.controlLabel}>Drag selected element directly on poster · Size {Math.round(currentTransform.scale*100)}% · Rotation {currentTransform.rotation}° · X {Math.round(currentTransform.x)} Y {Math.round(currentTransform.y)}</Text>
