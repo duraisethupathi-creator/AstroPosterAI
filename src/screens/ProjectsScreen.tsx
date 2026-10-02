@@ -36,7 +36,7 @@ export function ProjectsScreen() {
     <Text style={s.title}>{t('projects')}</Text>
     {loading ? <ActivityIndicator color={theme.colors.gold} accessibilityLabel={t('loading')}/>
       : error ? <View style={s.card}><Text style={s.error}>{t('studio.loadFailed')}</Text><AppButton title={t('ai.retry')} onPress={() => setAttempt(n => n + 1)}/></View>
-      : !drafts.length && !posters.length ? <Text style={s.hint}>{t('projectsEmpty')}</Text> : <>{posters.map(project => <Pressable key={project.id} accessibilityRole="button" onPress={() => { store.start(project.request, {success: true, categoryId: project.categoryId, zodiacId: project.zodiacId, language: project.language, mode: 'live', content: project.content}); router.push('/studio'); }} style={s.card}>
+      : !drafts.length && !posters.length ? <Text style={s.hint}>{t('projectsEmpty')}</Text> : <>{posters.map(project => <Pressable key={project.id} accessibilityRole="button" onPress={() => { store.start(project.request, {success: true, categoryId: project.categoryId, zodiacId: project.zodiacId, language: project.language, mode: 'live', content: project.content}, {id: project.id, editorLayout: project.editorLayout}); router.push('/studio'); }} style={s.card}>
           <Text style={s.name}>{project.zodiacSymbol} {project.zodiacName}</Text><Text style={s.hint}>{t(getCategory(project.categoryId).translationKey)} · {SUPPORTED_LANGUAGES.find(item => item.code === project.language)?.nativeName}</Text><Text style={s.hint}>{new Date(project.updatedAt).toLocaleString(language)}</Text>
         </Pressable>)}{drafts.map(draft => {
         const category = getCategory(draft.request.categoryId), zodiac = ZODIACS.find(sign => sign.id === draft.request.zodiacId);
