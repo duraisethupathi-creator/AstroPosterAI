@@ -9,6 +9,7 @@ export type PosterElementId = 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'
 export type PosterElementTransform = {x:number;y:number;scale:number;rotation:number;opacity:number};
 export type PosterEditorLayout = Partial<Record<PosterElementId, PosterElementTransform>>;
 export type PosterSmartDesign = {variant:number;font:number;background:number;smartDesign:number};
+export type SocialContent = {caption:string;description:string;hashtags:string;cta:string};
 
 export type PosterProject = {
   id: string;
@@ -33,8 +34,9 @@ export type PosterProject = {
   smartDesign?: PosterSmartDesign;
   name?: string;
   favorite?: boolean;
+  socialContent?: SocialContent;
 };
 
-export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign' | 'name' | 'favorite'>> & {
+export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign' | 'name' | 'favorite' | 'socialContent'>> & {
   content?: Partial<Record<OutputSectionId, string>>;
 };
