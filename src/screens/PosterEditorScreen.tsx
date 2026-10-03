@@ -1,5 +1,5 @@
 import React, {useRef, useState} from 'react';
-import {Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions} from 'react-native';
 import {useRouter} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {captureRef, releaseCapture} from 'react-native-view-shot';
@@ -12,7 +12,7 @@ import {useContentStudio} from '../providers/ContentStudioProvider';
 import {getCategory} from '../features/astrology/categories';
 import {PosterCanvas} from '../components/PosterCanvas';
 import {hasZodiacConflict} from '../features/astrology/zodiacConsistency';
-import type {PosterEditorLayout, PosterElementId, PosterElementTransform, PosterProject} from '../features/projects/types';
+import type {PosterEditorLayout, PosterElementId, PosterElementTransform, PosterProject, SocialContent} from '../features/projects/types';
 import {posterProjectStorage} from '../services/storage/posterProjectStorage';
 import {POSTER_TEMPLATES} from '../features/templates/templates';
 
@@ -63,6 +63,7 @@ export function PosterEditorScreen() {
   const [exportPreset,setExportPreset]=useState(0);
   const [exportQuality,setExportQuality]=useState<'standard'|'high'|'max'>('high');
   const [batchCount,setBatchCount]=useState(0);
+  const [social,setSocial]=useState<SocialContent>({caption:'',description:'',hashtags:'',cta:''});
   const posterWidth = Math.min(560, Math.max(1, width - 40));
   const activePreset=exportPresets[exportPreset];
   const posterHeight=Math.round(posterWidth*(activePreset.h/activePreset.w));
@@ -72,6 +73,7 @@ export function PosterEditorScreen() {
   const title = category ? translate(contentLanguage, category.translationKey) : t('todayHoroscope');
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
+  const generateSocial=()=>{const sign=zodiac?translate(contentLanguage,zodiac.translationKey):'';const cat=category?translate(contentLanguage,category.translationKey):title;const general=design?.version.content.general??'';const business=brand?.businessName||brand?.astrologerName||'AstroPoster AI';setSocial({caption:`${zodiac?.symbol??'✨'} ${sign} · ${cat}\n${general}`,description:`${cat} for ${sign}. Save and share today’s astrology guidance from ${business}.`,hashtags:`#${sign.replace(/\\s+/g,'')} #Astrology #RasiPalan #Horoscope #${business.replace(/\\s+/g,'')}`,cta:brand?.whatsapp?`மேலும் விவரங்களுக்கு WhatsApp: ${brand.whatsapp}`:`Follow ${business} for more astrology updates.`});};
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
   const layoutKey = JSON.stringify([posterWidth, posterHeight, sections, title, badge, brand, templateId, font, variant, background, elementTransforms]);
   const [ready, setReady] = useState<{key: string; height: number}>();
@@ -81,13 +83,13 @@ export function PosterEditorScreen() {
     const now=new Date().toISOString();
     try {
       if (projectId) {
-        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign}});
+        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social});
       } else {
         const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
         const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
           zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
           categoryId:design.request.categoryId,content:design.version.content,brand:design.request.brand,
-          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign}};
+          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social};
         await posterProjectStorage.saveAll([project]); setProjectId(id);
       }
       setProjectSaved(true);
@@ -168,7 +170,8 @@ export function PosterEditorScreen() {
             {control(t('font'), t(fonts[font]), () => setFont(value => (value + 1) % fonts.length))}
             {control(t('background'), t(backgrounds[background]), () => setBackground(value => (value + 1) % backgrounds.length))}
           </View>
-          <View style={s.exportCard}>
+          <View style={s.socialCard}><Text style={s.smartTitle}>Social Content Studio</Text><Text style={s.controlLabel}>Offline caption, description, hashtags and CTA. Everything remains editable.</Text><Pressable onPress={generateSocial} style={s.smartButton}><Text style={s.smartButtonText}>Generate Social Content</Text></Pressable>{(['caption','description','hashtags','cta'] as const).map(key=><View key={key}><Text style={s.socialLabel}>{key.toUpperCase()}</Text><TextInput multiline value={social[key]} onChangeText={value=>setSocial(old=>({...old,[key]:value}))} placeholder={'Enter '+key} placeholderTextColor="#666" style={s.socialInput}/></View>)}</View>
+                    <View style={s.exportCard}>
             <Text style={s.stage9Title}>Professional Export</Text>
             <Text style={s.controlLabel}>Preset · {exportPresets[exportPreset].name} · {exportPresets[exportPreset].w}×{exportPresets[exportPreset].h}</Text>
             <View style={s.actions}>{exportPresets.map((p,i)=><Pressable key={p.id} onPress={()=>setExportPreset(i)} style={[s.exportChip,exportPreset===i&&s.exportChipOn]}><Text style={exportPreset===i?s.exportChipTextOn:s.exportChipText}>{p.name}</Text></Pressable>)}</View>
@@ -203,6 +206,7 @@ const s = StyleSheet.create({
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
   saveProject:{minHeight:52,backgroundColor:'#E8C97D',borderRadius:15,alignItems:'center',justifyContent:'center',marginBottom:14}, saveProjectText:{color:'#111',fontWeight:'900',fontSize:16},
+  socialCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:10},socialLabel:{color:'#E8C97D',fontSize:11,fontWeight:'900',marginTop:4},socialInput:{minHeight:58,color:'#FFF',backgroundColor:'#0B0D18',borderWidth:1,borderColor:'#393345',borderRadius:11,padding:11,textAlignVertical:'top'},
   batchExport:{padding:14,borderWidth:1,borderColor:'#7C5CFF',borderRadius:16,marginBottom:14,gap:8},
   exportCard:{padding:14,borderWidth:1,borderColor:'#393345',borderRadius:16,marginBottom:14,gap:8},exportChip:{flex:1,minWidth:120,padding:10,borderWidth:1,borderColor:'#393345',borderRadius:11,alignItems:'center'},exportChipOn:{backgroundColor:'#E8C97D'},exportChipText:{color:'#AAA7B7',fontSize:11,fontWeight:'700'},exportChipTextOn:{color:'#111',fontSize:11,fontWeight:'900'},
   export: {flex: 1, minHeight: 48, backgroundColor: '#D6B46A', padding: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
