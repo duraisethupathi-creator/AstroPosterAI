@@ -7,7 +7,7 @@ import type {DeitySelection} from '../features/deities/types';
 import type {PosterEditorLayout, PosterElementId} from '../features/projects/types';
 
 type Props = {
-  width: number; title: string; badge?: string;
+  width: number; height?: number; title: string; badge?: string;
   sections: {key: string; label: string; text: string}[];
   brand?: BrandSnapshot; templateId?: string; variant?: number; font?: number; background?: number; deity?: DeitySelection;
   onReady?: (height: number) => void;
@@ -20,7 +20,7 @@ type Props = {
 const DEVOTIONAL_FOOTER = 'இறையருளால் நன்மைகள் பெருகட்டும்';
 
 // Capture-only poster surface. Template changes are visual only: content and brand data stay untouched.
-export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress,selectedElement,elementTransforms,onElementMove},ref){
+export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,height,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress,selectedElement,elementTransforms,onElementMove},ref){
   const template=getPosterTemplate(templateId);
   const [fontSize,setFontSize]=useState(Math.min(18,Math.max(14,width/23)));
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
@@ -36,9 +36,9 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
-    backgroundColor:template.background,borderRadius:template.radius}]}>
+    backgroundColor:template.background,borderRadius:template.radius,...(height?{height}:{})}]}>
     <View onLayout={({nativeEvent:{layout}})=>{const height=layout.height+2*(padding+template.borderWidth);
-      if(height>width*1.6&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(height);}}>
+      const targetHeight=height??layout.height+2*(padding+template.borderWidth); if(layout.height>targetHeight-2*(padding+template.borderWidth)&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(targetHeight);}}>
 
       {(brand?.logoUri||headerCenter.length||hasDeityUpload||showGod||rightProfileUri)?<View style={[s.header,{borderBottomColor:template.accent}]}>
         <View {...pan('logo')} style={[s.headerSide,tx('logo')]}>
