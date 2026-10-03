@@ -64,6 +64,8 @@ export function PosterEditorScreen() {
   const [exportQuality,setExportQuality]=useState<'standard'|'high'|'max'>('high');
   const [batchCount,setBatchCount]=useState(0);
   const posterWidth = Math.min(560, Math.max(1, width - 40));
+  const activePreset=exportPresets[exportPreset];
+  const posterHeight=Math.round(posterWidth*(activePreset.h/activePreset.w));
   const sections = category && design ? category.outputSections.map(key => ({
     key, label: translate(contentLanguage, `output.${key}`), text: design.version.content[key] ?? '',
   })) : [{key: 'general', label: t('output.general'), text: t('editorSample')}];
@@ -71,7 +73,7 @@ export function PosterEditorScreen() {
   const badge = zodiac ? `${zodiac.symbol} ${translate(contentLanguage, zodiac.translationKey)}` : undefined;
   const brand = design?.request.brand;
   // Remount only canvas layout state when its inputs change; generated text is immutable here.
-  const layoutKey = JSON.stringify([posterWidth, sections, title, badge, brand, templateId, font, variant, background, elementTransforms]);
+  const layoutKey = JSON.stringify([posterWidth, posterHeight, sections, title, badge, brand, templateId, font, variant, background, elementTransforms]);
   const [ready, setReady] = useState<{key: string; height: number}>();
   async function saveProject() {
     if (!design || !zodiac || savingProject) return;
@@ -92,7 +94,7 @@ export function PosterEditorScreen() {
     } catch { Alert.alert('Save Project','Could not save this project. Please try again.'); }
     finally { setSavingProject(false); }
   }
-  async function capturePoster(format:'png'|'jpg',presetIndex=exportPreset){if(ready?.key!==layoutKey||!canvas.current)throw new Error('NOT_READY');const preset=exportPresets[presetIndex];const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;const targetW=Math.min(preset.w,exportQuality==='standard'?900:preset.w);const scale=Math.min(targetW/posterWidth,8192/ready.height,Math.sqrt(12000000/(posterWidth*ready.height)));return captureRef(canvas,{format,quality:q,result:'tmpfile',width:Math.round(posterWidth*scale),height:Math.round(ready.height*scale)});}
+  async function capturePoster(format:'png'|'jpg',presetIndex=exportPreset){if(ready?.key!==layoutKey||!canvas.current)throw new Error('NOT_READY');const preset=exportPresets[presetIndex];const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;const targetW=exportQuality==='standard'?Math.min(900,preset.w):preset.w;const targetH=Math.round(targetW*(preset.h/preset.w));return captureRef(canvas,{format,quality:q,result:'tmpfile',width:targetW,height:targetH});}
   async function saveGallery(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);let uri:string|undefined;try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');uri=await capturePoster('png');await MediaLibrary.saveToLibraryAsync(uri);Alert.alert('Saved','Poster saved to your gallery.');}catch{setExportError(true);}finally{if(uri)releaseCapture(uri);exportLock.current=false;setExporting(false);}}
   async function exportAllSizes(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');for(let i=0;i<exportPresets.length;i++){const uri=await capturePoster('png',i);try{await MediaLibrary.saveToLibraryAsync(uri);}finally{releaseCapture(uri);}}Alert.alert('Export Complete',`Saved ${exportPresets.length} sizes to gallery.`);}catch{setExportError(true);}finally{exportLock.current=false;setExporting(false);}}
   async function inspectBatch(){if(!projectId)return;const current=await posterProjectStorage.get(projectId);if(!current)return;const batch=await posterProjectStorage.listBatch(current.batchId);setBatchCount(batch.length);Alert.alert('12-Rasi Batch',batch.length>1?String(batch.length)+' saved posters found. Open 12-Rasi Batches in My Projects to export each saved poster safely.':'This project is not part of a multi-poster batch.');}
@@ -125,7 +127,7 @@ export function PosterEditorScreen() {
         <Text accessibilityRole="header" style={s.heading}>{t('preview.title')}</Text>
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
-        </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} title={title} badge={badge}
+        </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} height={posterHeight} title={title} badge={badge}
           sections={sections} brand={brand} templateId={templateId} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:{...base,x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.y+dy))}}});}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
