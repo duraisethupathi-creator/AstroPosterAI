@@ -9,7 +9,9 @@ export type PosterElementId = 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'
 export type PosterElementTransform = {x:number;y:number;scale:number;rotation:number;opacity:number};
 export type PosterEditorLayout = Partial<Record<PosterElementId, PosterElementTransform>>;
 export type PosterSmartDesign = {variant:number;font:number;background:number;smartDesign:number};
+export type SocialPlatform = 'instagram'|'facebook'|'whatsapp';
 export type SocialContent = {caption:string;description:string;hashtags:string;cta:string};
+export type PosterSocialState = {content:SocialContent;platform:SocialPlatform;variant:number};
 
 export type PosterProject = {
   id: string;
@@ -35,8 +37,9 @@ export type PosterProject = {
   name?: string;
   favorite?: boolean;
   socialContent?: SocialContent;
+  socialState?: PosterSocialState;
 };
 
-export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign' | 'name' | 'favorite' | 'socialContent'>> & {
+export type PosterProjectUpdate = Partial<Pick<PosterProject, 'templateId' | 'layoutId' | 'backgroundId' | 'zodiacStyleId' | 'deity' | 'editorLayout' | 'smartDesign' | 'name' | 'favorite' | 'socialContent' | 'socialState'>> & {
   content?: Partial<Record<OutputSectionId, string>>;
 };
