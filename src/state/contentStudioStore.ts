@@ -3,13 +3,13 @@ import {getCategory} from '../features/astrology/categories';
 import type {AstrologyGenerationRequest, OutputSectionId} from '../features/astrology/types';
 import type {AstrologyGenerationResult} from '../types/generation';
 import type {ContentAction, ContentDraft, DesignContent, StudioVersion} from '../types/contentStudio';
-import type {PosterEditorLayout, PosterSmartDesign} from '../features/projects/types';
+import type {PosterEditorLayout, PosterSmartDesign, PosterSocialState} from '../features/projects/types';
 import type {ContentDraftRepository} from '../services/storage/contentDraftRepository';
 import {hasZodiacConflict} from '../features/astrology/zodiacConsistency';
 
 export type StudioCommand = Omit<ContentAction, 'language' | 'currentContent'>;
 type Session = {request: AstrologyGenerationRequest; version: StudioVersion; past: StudioVersion[]; future: StudioVersion[];
-  draftId?: string; createdAt?: string; savedFingerprint?: string; projectId?: string; editorLayout?: PosterEditorLayout; smartDesign?: PosterSmartDesign};
+  draftId?: string; createdAt?: string; savedFingerprint?: string; projectId?: string; editorLayout?: PosterEditorLayout; smartDesign?: PosterSmartDesign; socialState?: PosterSocialState};
 export type StudioState = {session?: Session; pending?: StudioCommand; error?: TranslationKey; lastCommand?: StudioCommand;
   saving: boolean; saveError: boolean; saved: boolean; design?: DesignContent};
 const copy = <T,>(value: T): T => {
@@ -35,9 +35,9 @@ export function createContentStudioStore(repository: ContentDraftRepository, gen
   const store = {
     getSnapshot: () => state,
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
-    start(request: AstrologyGenerationRequest, result: AstrologyGenerationResult, project?: {id:string; editorLayout?:PosterEditorLayout; smartDesign?:PosterSmartDesign}) {
+    start(request: AstrologyGenerationRequest, result: AstrologyGenerationResult, project?: {id:string; editorLayout?:PosterEditorLayout; smartDesign?:PosterSmartDesign; socialState?:PosterSocialState}) {
       active?.abort(); active = undefined; sessionId++;
-      publish({session: {request: copy(request), version: {content: copy(result.content), language: result.language, mode: result.mode, tone: 'simple'}, past: [], future: [], projectId: project?.id, editorLayout: copy(project?.editorLayout ?? {}), smartDesign: copy(project?.smartDesign)},
+      publish({session: {request: copy(request), version: {content: copy(result.content), language: result.language, mode: result.mode, tone: 'simple'}, past: [], future: [], projectId: project?.id, editorLayout: copy(project?.editorLayout ?? {}), smartDesign: copy(project?.smartDesign), socialState: copy(project?.socialState)},
         pending: undefined, error: undefined, lastCommand: undefined, saving: false, saved: false, saveError: false});
     },
     open(draft: ContentDraft) {
@@ -100,11 +100,11 @@ export function createContentStudioStore(repository: ContentDraftRepository, gen
     },
     toDesign() {
       if (!state.session) return;
-      const {request, version, draftId, projectId, editorLayout, smartDesign} = state.session;
+      const {request, version, draftId, projectId, editorLayout, smartDesign, socialState} = state.session;
       if (hasZodiacConflict(version.content, request.zodiacId)) {
         publish({error: 'preview.zodiacMismatch'}); return;
       }
-      const payload = copy({request, version, draftId, projectId, editorLayout, smartDesign});
+      const payload = copy({request, version, draftId, projectId, editorLayout, smartDesign, socialState});
       publish({design: payload});
       return payload;
     },
