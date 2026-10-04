@@ -64,9 +64,9 @@ export function PosterEditorScreen() {
   const [exportPreset,setExportPreset]=useState(0);
   const [exportQuality,setExportQuality]=useState<'standard'|'high'|'max'>('high');
   const [batchCount,setBatchCount]=useState(0);
-  const [social,setSocial]=useState<SocialContent>({caption:'',description:'',hashtags:'',cta:''});
-  const [socialPreset,setSocialPreset]=useState<'instagram'|'facebook'|'whatsapp'>('instagram');
-  const [socialVariant,setSocialVariant]=useState(0);
+  const [social,setSocial]=useState<SocialContent>(()=>design?.socialState?.content??{caption:'',description:'',hashtags:'',cta:''});
+  const [socialPreset,setSocialPreset]=useState<'instagram'|'facebook'|'whatsapp'>(()=>design?.socialState?.platform??'instagram');
+  const [socialVariant,setSocialVariant]=useState(design?.socialState?.variant??0);
   const posterWidth = Math.min(560, Math.max(1, width - 40));
   const activePreset=exportPresets[exportPreset];
   const posterHeight=Math.round(posterWidth*(activePreset.h/activePreset.w));
@@ -88,13 +88,13 @@ export function PosterEditorScreen() {
     const now=new Date().toISOString();
     try {
       if (projectId) {
-        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social});
+        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}});
       } else {
         const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
         const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
           zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
           categoryId:design.request.categoryId,content:design.version.content,brand:design.request.brand,
-          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social};
+          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}};
         await posterProjectStorage.saveAll([project]); setProjectId(id);
       }
       setProjectSaved(true);
