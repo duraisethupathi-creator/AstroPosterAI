@@ -34,48 +34,36 @@ export function parseGenerationResult(value: unknown, request: AstrologyGenerati
 type ClientOptions = {action?: ContentAction; baseUrl?: string; signal?: AbortSignal; timeoutMs?: number; fetcher?: typeof fetch; development?: boolean};
 export async function generateAstrologyContent(request: AstrologyGenerationRequest, options: ClientOptions = {}) {
   if (request.generateAllZodiacs) throw new AIClientError('BULK_NOT_SUPPORTED');
-  // Only a public backend URL is bundled. No provider credentials or SDKs.
-  const baseUrl = options.baseUrl ?? process.env.EXPO_PUBLIC_AI_BASE_URL ?? process.env.EXPO_PUBLIC_API_BASE_URL;
-  const development = options.development ?? (typeof __DEV__ !== 'undefined' && __DEV__);
-  let url: URL;
-  try {
-    url = new URL(baseUrl ?? '');
-    if (url.username || url.password || url.search || url.hash ||
-      !(url.protocol === 'https:' || (development && url.protocol === 'http:'))) throw new Error();
-  } catch { throw new AIClientError('NOT_CONFIGURED'); }
-  logAIEvent('request started', {backendOrigin: url.origin}, development);
-  const controller = new AbortController();
-  let timedOut = false;
-  const cancel = () => controller.abort();
   if (options.signal?.aborted) throw new AIClientError('CANCELLED');
-  options.signal?.addEventListener('abort', cancel, {once: true});
-  // Backend local inference + optional repair share at most 60s; allow transport overhead.
-  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, options.timeoutMs ?? 75000);
-  try {
-    const wireRequest = {...request, brand: request.brand ? {...request.brand, logoUri: null, profilePhotoUri: null} : undefined};
-    const response = await (options.fetcher ?? fetch)(`${url.toString().replace(/\/$/, '')}/api/ai/generate`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({request: wireRequest, action: options.action}), signal: controller.signal,
-    });
-    logAIEvent('HTTP status', {status: response.status}, development);
-    const raw = await response.text();
-    logAIEvent('response received', undefined, development);
-    if (raw.length > 24000) throw new AIClientError('INVALID_RESPONSE');
-    let body: unknown;
-    try { body = JSON.parse(raw); } catch { throw new AIClientError('INVALID_RESPONSE'); }
-    if (!response.ok) {
-      const code = record(body) && record(body.error) ? body.error.code : undefined;
-      if (AI_ERROR_CODES.some(allowed => allowed === code)) throw new AIClientError(code as AIErrorCode);
-      throw new AIClientError('INVALID_RESPONSE');
-    }
-    return parseGenerationResult(body, request, options.action);
-  } catch (error) {
-    if (timedOut) throw new AIClientError('CLIENT_TIMEOUT');
-    if (options.signal?.aborted) throw new AIClientError('CANCELLED');
-    if (error instanceof AIClientError) throw error;
-    throw new AIClientError('NETWORK_ERROR');
-  } finally {
-    clearTimeout(timer);
-    options.signal?.removeEventListener('abort', cancel);
-  }
+  const language=resultLanguage(request, options.action);
+  const sections=options.action?.sectionKey?[options.action.sectionKey]:getCategory(request.categoryId).outputSections;
+  const current=options.action?.currentContent;
+  const sign=request.zodiacId ? request.zodiacId.replace(/-/g,' ') : '';
+  const ta=language==='ta';
+  const defaults:Record<string,string>={
+    general:ta?`இன்று ${sign} ராசிக்காரர்கள் அமைதியாக திட்டமிட்டு செயல்பட்டால் நல்ல முன்னேற்றம் காணலாம்.`:`Today brings steady progress for ${sign}. Plan calmly and act with confidence.`,
+    career:ta?'வேலை மற்றும் தொழிலில் பொறுமையுடன் செயல்படுவது நல்ல பலன் தரும்.':'Patience and clear priorities support career progress today.',
+    finance:ta?'செலவுகளை கவனித்து சேமிப்புக்கு முக்கியத்துவம் கொடுங்கள்.':'Watch expenses and give priority to sensible saving.',
+    love:ta?'உறவுகளில் திறந்த மனதுடன் பேசுவது நல்ல புரிதலை உருவாக்கும்.':'Open communication can strengthen relationships.',
+    health:ta?'ஓய்வு, தண்ணீர் மற்றும் ஒழுங்கான உணவில் கவனம் செலுத்துங்கள்.':'Prioritize rest, hydration and a balanced routine.',
+    luckyNumber:'6', luckyColour:ta?'தங்க நிறம்':'Gold',
+    positiveMessage:ta?'நம்பிக்கையுடன் முன்னேறுங்கள்; நல்ல மாற்றங்கள் உருவாகும்.':'Move forward with confidence and welcome positive change.',
+    overview:ta?'இன்றைய சூழல் நிதானமான முன்னேற்றத்திற்கு ஏற்றதாக உள்ளது.':'The current period supports thoughtful, steady progress.',
+    impact:ta?'மாற்றங்கள் புதிய வாய்ப்புகளை கவனிக்கச் செய்யும்.':'Changes may highlight useful new opportunities.',
+    guidance:ta?'முக்கிய முடிவுகளை நிதானமாக எடுத்துக்கொள்ளுங்கள்.':'Take important decisions calmly and thoughtfully.',
+    remedy:ta?'தினமும் சில நிமிடங்கள் அமைதியான பிரார்த்தனை அல்லது தியானம் செய்யுங்கள்.':'Spend a few quiet minutes in prayer or reflection.',
+    title:ta?'இன்றைய ஜோதிட வழிகாட்டல்':'Today’s Astrology Guidance',
+    greeting:ta?'இனிய வாழ்த்துகள்!':'Warm wishes!',
+    message:ta?'நல்ல எண்ணங்களும் மகிழ்ச்சியும் உங்கள் நாளை நிறைக்கட்டும்.':'May positivity and happiness fill your day.',
+    cta:ta?'மேலும் ஜோதிட தகவல்களுக்கு தொடர்ந்து பாருங்கள்.':'Follow for more astrology updates.',
+    headline:ta?'உங்கள் ஜோதிட வழிகாட்டல் இன்று':'Your Astrology Guidance Today',
+    description:ta?'எளிய மற்றும் தெளிவான ஜோதிட தகவல்களைப் பெறுங்கள்.':'Get simple and clear astrology guidance.',
+    blessing:ta?'முருகன் அருள் உங்கள் வாழ்வில் நன்மைகளை பெருக்கட்டும்.':'May divine grace bring goodness to your life.',
+    tips:ta?'இன்றைய நாளை திட்டமிட்டு, முக்கிய பணிகளுக்கு முன்னுரிமை கொடுங்கள்.':'Plan the day and prioritize what matters most.'
+  };
+  const content=Object.fromEntries(sections.map(section=>[section,
+    options.action?.sectionKey && current?.[section] ? current[section]! : defaults[section] ?? (ta?'நல்ல எண்ணங்களுடன் நாளை முன்னெடுங்கள்.':'Move through the day with a positive mindset.')
+  ]));
+  const result={success:true,mode:'mock',categoryId:request.categoryId,language,zodiacId:request.zodiacId,content};
+  return parseGenerationResult(result,request,options.action);
 }
