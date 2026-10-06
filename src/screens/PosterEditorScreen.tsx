@@ -4,7 +4,6 @@ import {useRouter} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {captureRef, releaseCapture} from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
 import * as Clipboard from 'expo-clipboard';
 import {translate, type TranslationKey} from '../i18n';
 import {useLanguage} from '../i18n/LanguageProvider';
@@ -102,8 +101,18 @@ export function PosterEditorScreen() {
     finally { setSavingProject(false); }
   }
   async function capturePoster(format:'png'|'jpg',presetIndex=exportPreset){if(ready?.key!==layoutKey||!canvas.current)throw new Error('NOT_READY');const preset=exportPresets[presetIndex];const q=exportQuality==='standard'?.82:exportQuality==='high'?.94:1;const targetW=exportQuality==='standard'?Math.min(900,preset.w):preset.w;const targetH=Math.round(targetW*(preset.h/preset.w));return captureRef(canvas,{format,quality:q,result:'tmpfile',width:targetW,height:targetH});}
-  async function saveGallery(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);let uri:string|undefined;try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');uri=await capturePoster('png');await MediaLibrary.saveToLibraryAsync(uri);Alert.alert('Saved','Poster saved to your gallery.');}catch{setExportError(true);}finally{if(uri)releaseCapture(uri);exportLock.current=false;setExporting(false);}}
-  async function exportAllSizes(){if(exportLock.current||zodiacConflict)return;exportLock.current=true;setExporting(true);setExportError(false);try{const permission=await MediaLibrary.requestPermissionsAsync();if(!permission.granted)throw new Error('PERMISSION');for(let i=0;i<exportPresets.length;i++){const uri=await capturePoster('png',i);try{await MediaLibrary.saveToLibraryAsync(uri);}finally{releaseCapture(uri);}}Alert.alert('Export Complete',`Saved ${exportPresets.length} sizes to gallery.`);}catch{setExportError(true);}finally{exportLock.current=false;setExporting(false);}}
+  async function saveGallery(){
+    if(exportLock.current||zodiacConflict)return;
+    exportLock.current=true;setExporting(true);setExportError(false);let uri:string|undefined;
+    try{
+      uri=await capturePoster('png');
+      if(!await Sharing.isAvailableAsync())throw new Error('Unavailable');
+      await Sharing.shareAsync(uri,{mimeType:'image/png',UTI:'public.png',dialogTitle:'Save poster'});
+    }catch{setExportError(true);}finally{if(uri)releaseCapture(uri);exportLock.current=false;setExporting(false);}
+  }
+  async function exportAllSizes(){
+    Alert.alert('Export All Sizes','Expo Go compatibility mode is active. Select a preset and use Save / Share. A release build can restore direct gallery batch saving.');
+  }
   async function inspectBatch(){if(!projectId)return;const current=await posterProjectStorage.get(projectId);if(!current)return;const batch=await posterProjectStorage.listBatch(current.batchId);setBatchCount(batch.length);Alert.alert('12-Rasi Batch',batch.length>1?String(batch.length)+' saved posters found. Open 12-Rasi Batches in My Projects to export each saved poster safely.':'This project is not part of a multi-poster batch.');}
   async function exportPoster(format: 'png' | 'jpg') {
     if (zodiacConflict || exportLock.current || ready?.key !== layoutKey || !canvas.current) return;
