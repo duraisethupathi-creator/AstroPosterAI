@@ -22,7 +22,7 @@ const DEVOTIONAL_FOOTER = 'இறையருளால் நன்மைகள�
 // Capture-only poster surface. Template changes are visual only: content and brand data stay untouched.
 export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width,height,title,badge,sections,brand,templateId,variant=0,font=0,deity,onReady,editable=false,onElementPress,selectedElement,elementTransforms,onElementMove},ref){
   const template=getPosterTemplate(templateId);
-  const [fontSize,setFontSize]=useState(Math.min(18,Math.max(14,width/23)));
+  const [fontSize,setFontSize]=useState(()=>{const base=Math.min(18,Math.max(12,width/23));if(!height)return base;const textLoad=sections.reduce((n,s)=>n+s.label.length+s.text.length,0)+title.length+(badge?.length??0);const density=textLoad/Math.max(1,height);return density>.9?12:density>.68?13:density>.5?14:base;});
   const padding=Math.max(14,Math.min(24,width*.055)); const lineHeight=Math.ceil(fontSize*1.65);
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
@@ -35,10 +35,13 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const tx=(id: Props['selectedElement'])=>{const value=id?elementTransforms?.[id]:undefined;return value?{opacity:value.opacity,transform:[{translateX:value.x},{translateY:value.y},{rotate:`${value.rotation}deg`},{scale:value.scale}]}:undefined;};
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
+  const innerTarget=height?Math.max(1,height-2*(padding+template.borderWidth)):undefined;
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
-    backgroundColor:template.background,borderRadius:template.radius,...(height?{height}:{})}]}>
-    <View onLayout={({nativeEvent:{layout}})=>{const height=layout.height+2*(padding+template.borderWidth);
-      const targetHeight=height??layout.height+2*(padding+template.borderWidth); if(layout.height>targetHeight-2*(padding+template.borderWidth)&&fontSize>12)setFontSize(v=>Math.max(12,v-1));else onReady?.(targetHeight);}}>
+    backgroundColor:template.background,borderRadius:template.radius,...(height?{height,overflow:'hidden' as const}:{})}]}>
+    <View style={innerTarget?{height:innerTarget,overflow:'hidden'}:undefined} onLayout={({nativeEvent:{layout}})=>{
+      const measured=layout.height+2*(padding+template.borderWidth);
+      if(height){onReady?.(height);}else{onReady?.(measured);}
+    }}>
 
       {(brand?.logoUri||headerCenter.length||hasDeityUpload||showGod||rightProfileUri)?<View style={[s.header,{borderBottomColor:template.accent}]}>
         <View {...pan('logo')} style={[s.headerSide,tx('logo')]}>
@@ -76,14 +79,14 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
 });
 const s=StyleSheet.create({
   canvas:{alignSelf:'center'},
-  header:{flexDirection:'row',alignItems:'center',paddingBottom:10,marginBottom:8,borderBottomWidth:1},
+  header:{flexDirection:'row',alignItems:'center',paddingBottom:7,marginBottom:5,borderBottomWidth:1},
   headerSide:{width:'25%',alignItems:'center',justifyContent:'center',minHeight:68},
   headerCenter:{width:'50%',alignItems:'center',justifyContent:'center',paddingHorizontal:8,gap:1},
   badge:{fontWeight:'700',includeFontPadding:true},
-  title:{fontWeight:'800',marginTop:10,includeFontPadding:true},
+  title:{fontWeight:'800',marginTop:6,includeFontPadding:true},
   label:{fontWeight:'700',includeFontPadding:true},
   body:{includeFontPadding:true,flexShrink:1},
-  footer:{marginTop:20,paddingTop:10,borderTopWidth:1,gap:2},
+  footer:{marginTop:10,paddingTop:7,borderTopWidth:1,gap:2},
   deity:{alignItems:'center',justifyContent:'center'},
   selected:{borderWidth:1,borderColor:'#E8C97D',borderRadius:6}
 });
