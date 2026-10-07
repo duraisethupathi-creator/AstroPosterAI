@@ -8,7 +8,7 @@ import type {DeitySelection} from '../deities/types';
 export type PosterElementId = 'logo'|'profile'|'deity'|'brand'|'badge'|'title'|'content'|'footer';
 export type PosterElementTransform = {x:number;y:number;scale:number;rotation:number;opacity:number};
 export type PosterEditorLayout = Partial<Record<PosterElementId, PosterElementTransform>>;
-export type PosterSmartDesign = {variant:number;font:number;background:number;smartDesign:number};
+export type PosterSmartDesign = {variant:number;font:number;background:number;smartDesign:number;templateId?:string};
 export type SocialPlatform = 'instagram'|'facebook'|'whatsapp';
 export type SocialContent = {caption:string;description:string;hashtags:string;cta:string};
 export type PosterSocialState = {content:SocialContent;platform:SocialPlatform;variant:number};
