@@ -67,9 +67,12 @@ export function PosterEditorScreen() {
   const [social,setSocial]=useState<SocialContent>(()=>design?.socialState?.content??{caption:'',description:'',hashtags:'',cta:''});
   const [socialPreset,setSocialPreset]=useState<'instagram'|'facebook'|'whatsapp'>(()=>design?.socialState?.platform??'instagram');
   const [socialVariant,setSocialVariant]=useState(design?.socialState?.variant??0);
-  const posterWidth = Math.min(560, Math.max(1, width - 40));
+  const previewMaxWidth=Math.min(560,Math.max(1,width-40));
   const activePreset=exportPresets[exportPreset];
-  const posterHeight=Math.round(posterWidth*(activePreset.h/activePreset.w));
+  const previewMaxHeight=Math.min(720,Math.max(320,width*1.45));
+  const presetRatio=activePreset.w/activePreset.h;
+  const posterWidth=Math.round(Math.min(previewMaxWidth,previewMaxHeight*presetRatio));
+  const posterHeight=Math.round(posterWidth/presetRatio);
   const sections = category && design ? category.outputSections.map(key => ({
     key, label: translate(contentLanguage, `output.${key}`), text: design.version.content[key] ?? '',
   })) : [{key: 'general', label: t('output.general'), text: t('editorSample')}];
@@ -185,7 +188,7 @@ export function PosterEditorScreen() {
             {control(t('font'), t(fonts[font]), () => setFont(value => (value + 1) % fonts.length))}
             {control(t('background'), t(backgrounds[background]), () => setBackground(value => (value + 1) % backgrounds.length))}
           </View>
-          <View style={s.socialCard}><Text style={s.smartTitle}>Social Content Studio</Text><Text style={s.controlLabel}>Offline Tamil/English social copy. Select platform, generate variants, edit and copy.</Text><View style={s.actions}>{(['instagram','facebook','whatsapp'] as const).map(p=><Pressable key={p} onPress={()=>setSocialPreset(p)} style={[s.exportChip,socialPreset===p&&s.exportChipOn]}><Text style={socialPreset===p?s.exportChipTextOn:s.exportChipText}>{p[0].toUpperCase()+p.slice(1)}</Text></Pressable>)}</View><View style={s.actions}><Pressable onPress={generateSocial} style={s.smartButton}><Text style={s.smartButtonText}>{socialVariant?'Regenerate Variant':'Generate Social Content'}</Text></Pressable><Pressable onPress={()=>void copyAllSocial()} style={s.smartButton}><Text style={s.smartButtonText}>Copy All</Text></Pressable></View>{(['caption','description','hashtags','cta'] as const).map(key=><View key={key}><View style={s.socialHead}><Text style={s.socialLabel}>{key.toUpperCase()}</Text><Pressable onPress={()=>void copySocial(key)}><Text style={s.copyText}>Copy</Text></Pressable></View><TextInput multiline value={social[key]} onChangeText={value=>setSocial(old=>({...old,[key]:value}))} placeholder={'Enter '+key} placeholderTextColor="#666" style={s.socialInput}/></View>)}</View>
+          <View style={s.socialCard}><Text style={s.smartTitle}>Social Content Studio</Text><Text style={s.controlLabel}>Offline Tamil/English social copy. Select platform, generate variants, edit and copy.</Text><View style={s.platformActions}>{(['instagram','facebook','whatsapp'] as const).map(p=><Pressable key={p} onPress={()=>setSocialPreset(p)} style={[s.exportChip,socialPreset===p&&s.exportChipOn]}><Text style={socialPreset===p?s.exportChipTextOn:s.exportChipText}>{p[0].toUpperCase()+p.slice(1)}</Text></Pressable>)}</View><View style={s.actions}><Pressable onPress={generateSocial} style={s.smartButton}><Text style={s.smartButtonText}>{socialVariant?'Regenerate Variant':'Generate Social Content'}</Text></Pressable><Pressable onPress={()=>void copyAllSocial()} style={s.smartButton}><Text style={s.smartButtonText}>Copy All</Text></Pressable></View>{(['caption','description','hashtags','cta'] as const).map(key=><View key={key}><View style={s.socialHead}><Text style={s.socialLabel}>{key.toUpperCase()}</Text><Pressable onPress={()=>void copySocial(key)}><Text style={s.copyText}>Copy</Text></Pressable></View><TextInput multiline value={social[key]} onChangeText={value=>setSocial(old=>({...old,[key]:value}))} placeholder={'Enter '+key} placeholderTextColor="#666" style={s.socialInput}/></View>)}</View>
                     <View style={s.exportCard}>
             <Text style={s.stage9Title}>Professional Export</Text>
             <Text style={s.controlLabel}>Preset · {exportPresets[exportPreset].name} · {exportPresets[exportPreset].w}×{exportPresets[exportPreset].h}</Text>
@@ -218,12 +221,13 @@ const s = StyleSheet.create({
   smartCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:8},smartTitle:{color:'#E8C97D',fontSize:18,fontWeight:'900'},smartButton:{flex:1,minHeight:48,borderRadius:13,backgroundColor:'#5B35D5',alignItems:'center',justifyContent:'center',paddingHorizontal:10},smartButtonText:{color:'#FFF',fontWeight:'900'},
   stage9:{padding:12,borderWidth:1,borderColor:'#D6B46A',borderRadius:14,marginBottom:14,gap:8},stage9Title:{color:'#E8C97D',fontWeight:'900',fontSize:16},
   actions: {flexDirection: 'row', gap: 10, marginBottom: 10},
+  platformActions:{flexDirection:'row',gap:8,marginBottom:10},
   button: {flex: 1, minHeight: 64, backgroundColor: '#171A28', borderRadius: 13, padding: 13, justifyContent: 'center'},
   controlLabel: {color: '#AAA7B7', fontSize: 12, marginBottom: 5}, buttonText: {color: '#FFF', fontWeight: '700', lineHeight: 23},
   saveProject:{minHeight:52,backgroundColor:'#E8C97D',borderRadius:15,alignItems:'center',justifyContent:'center',marginBottom:14}, saveProjectText:{color:'#111',fontWeight:'900',fontSize:16},
   socialCard:{padding:14,borderWidth:1,borderColor:'#7C5CFF',backgroundColor:'#121025',borderRadius:16,marginBottom:14,gap:10},socialHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},copyText:{color:'#BCA8FF',fontWeight:'800',fontSize:12},socialLabel:{color:'#E8C97D',fontSize:11,fontWeight:'900',marginTop:4},socialInput:{minHeight:58,color:'#FFF',backgroundColor:'#0B0D18',borderWidth:1,borderColor:'#393345',borderRadius:11,padding:11,textAlignVertical:'top'},
   batchExport:{padding:14,borderWidth:1,borderColor:'#7C5CFF',borderRadius:16,marginBottom:14,gap:8},
-  exportCard:{padding:14,borderWidth:1,borderColor:'#393345',borderRadius:16,marginBottom:14,gap:8},exportChip:{flex:1,minWidth:120,padding:10,borderWidth:1,borderColor:'#393345',borderRadius:11,alignItems:'center'},exportChipOn:{backgroundColor:'#E8C97D'},exportChipText:{color:'#AAA7B7',fontSize:11,fontWeight:'700'},exportChipTextOn:{color:'#111',fontSize:11,fontWeight:'900'},
+  exportCard:{padding:14,borderWidth:1,borderColor:'#393345',borderRadius:16,marginBottom:14,gap:8},exportChip:{flex:1,minWidth:0,padding:10,borderWidth:1,borderColor:'#393345',borderRadius:11,alignItems:'center'},exportChipOn:{backgroundColor:'#E8C97D'},exportChipText:{color:'#AAA7B7',fontSize:11,fontWeight:'700'},exportChipTextOn:{color:'#111',fontSize:11,fontWeight:'900'},
   export: {flex: 1, minHeight: 48, backgroundColor: '#D6B46A', padding: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
   exportText: {color: '#111', fontWeight: '800', textAlign: 'center'}, disabled: {opacity: 0.45}, error: {color: '#FFB0A4', marginVertical: 10},
 });
