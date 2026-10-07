@@ -25,10 +25,10 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const baseFont=Math.min(18,Math.max(12,width/23));
   const textLoad=sections.reduce((n,s)=>n+s.label.length+s.text.length,0)+title.length+(badge?.length??0);
   const density=height?textLoad/Math.max(1,height):0;
-  const fontSize=height?(density>.72?10:density>.55?11:density>.40?12:density>.30?13:Math.min(15,baseFont)):baseFont;
+  const fontSize=height?(density>.62?9:density>.48?10:density>.36?11:density>.27?12:Math.min(14,baseFont)):baseFont;
   const compact=Boolean(height);
   const padding=compact?Math.max(10,Math.min(16,width*.038)):Math.max(14,Math.min(24,width*.055));
-  const lineHeight=Math.ceil(fontSize*(compact?1.38:1.65));
+  const lineHeight=Math.ceil(fontSize*(compact?1.28:1.65));
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
   const headerImageSize=compact?Math.max(44,Math.min(64,width*.15)):Math.max(60,Math.min(88,width*.205));
@@ -37,13 +37,20 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const hasDeityUpload=deity?.mode==='upload'&&Boolean(deity.uri);
   const showGod=Boolean(god)&&!hasDeityUpload;
   const rightProfileUri=!hasDeityUpload&&!showGod?brand?.profilePhotoUri:null;
-  const tx=(id: Props['selectedElement'])=>{const value=id?elementTransforms?.[id]:undefined;return value?{opacity:value.opacity,transform:[{translateX:value.x},{translateY:value.y},{rotate:`${value.rotation}deg`},{scale:value.scale}]}:undefined;};
+  const tx=(id: Props['selectedElement'])=>{const value=id?elementTransforms?.[id]:undefined;if(!value)return undefined;
+    // Text blocks stay inside the poster safe area even when an older saved layout
+    // or Smart Design contains aggressive horizontal offsets/scales.
+    const textElement=id==='badge'||id==='title'||id==='content'||id==='footer'||id==='brand';
+    const safeX=textElement?Math.max(-4,Math.min(4,value.x)):value.x;
+    const safeScale=textElement?Math.min(1.08,value.scale):value.scale;
+    return {opacity:value.opacity,transform:[{translateX:safeX},{translateY:value.y},{rotate:`${value.rotation}deg`},{scale:safeScale}]};};
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
   const innerTarget=height?Math.max(1,height-2*(padding+template.borderWidth)):undefined;
+  const safeInset=compact?Math.max(5,Math.round(width*.012)):0;
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
     backgroundColor:template.background,borderRadius:template.radius,...(height?{height,overflow:'hidden' as const}:{})}]}>
-    <View style={innerTarget?{height:innerTarget,overflow:'hidden'}:undefined} onLayout={({nativeEvent:{layout}})=>{
+    <View style={innerTarget?{height:innerTarget,overflow:'hidden',paddingHorizontal:safeInset}:undefined} onLayout={({nativeEvent:{layout}})=>{
       const measured=layout.height+2*(padding+template.borderWidth);
       if(height){onReady?.(height);}else{onReady?.(measured);}
     }}>
@@ -68,7 +75,7 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
 
       {badge?<Text numberOfLines={1} {...pan('badge')} allowFontScaling={false} style={[s.badge,tx('badge'),selectedElement==='badge'&&s.selected,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
       <Text {...pan('title')} allowFontScaling={false} style={[s.title,tx('title'),selectedElement==='title'&&s.selected,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
-      <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*(compact?.55:.9))}}>
+      <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*(compact?.42:.9))}}>
         <Text allowFontScaling={false} style={[s.label,{color:template.accent,fontSize,lineHeight,textAlign:template.align,fontFamily:family,
           textTransform:template.labelTransform}]}>{section.label}</Text>
         <Text allowFontScaling={false} numberOfLines={compact?4:undefined} ellipsizeMode="tail" textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
@@ -91,7 +98,7 @@ const s=StyleSheet.create({
   title:{fontWeight:'800',marginTop:6,includeFontPadding:true},
   label:{fontWeight:'700',includeFontPadding:true},
   body:{includeFontPadding:true,flexShrink:1},
-  footer:{marginTop:10,paddingTop:7,borderTopWidth:1,gap:2},
+  footer:{marginTop:6,paddingTop:5,borderTopWidth:1,gap:1},
   deity:{alignItems:'center',justifyContent:'center'},
   selected:{borderWidth:1,borderColor:'#E8C97D',borderRadius:6}
 });
