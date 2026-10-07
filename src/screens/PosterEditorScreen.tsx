@@ -34,7 +34,8 @@ export function PosterEditorScreen() {
   const [background, setBackground] = useState(design?.smartDesign?.background??0);
   const [selectedElement,setSelectedElement]=useState<PosterElementId>('title');
   const defaultTransform: PosterElementTransform={x:0,y:0,scale:1,rotation:0,opacity:1};
-  const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>(()=>design?.editorLayout??{});
+  const clampTransform=(id:PosterElementId,value?:PosterElementTransform):PosterElementTransform=>{const v=value??defaultTransform;const horizontal=id==='content'||id==='title'||id==='badge'?10:28;return {...v,x:Math.max(-horizontal,Math.min(horizontal,v.x)),y:Math.max(-120,Math.min(120,v.y)),scale:Math.max(.75,Math.min(1.35,v.scale)),opacity:Math.max(.25,Math.min(1,v.opacity))};};
+  const [elementTransforms,setElementTransforms]=useState<PosterEditorLayout>(()=>{const saved=design?.editorLayout??{};return Object.fromEntries(Object.entries(saved).map(([id,value])=>[id,clampTransform(id as PosterElementId,value)])) as PosterEditorLayout;});
   const [projectId,setProjectId]=useState<string|undefined>(design?.projectId);
   const [savingProject,setSavingProject]=useState(false);
   const [projectSaved,setProjectSaved]=useState(false);
@@ -42,7 +43,7 @@ export function PosterEditorScreen() {
   const [smartLayoutStep,setSmartLayoutStep]=useState(0);
   const [templateId,setTemplateId]=useState(design?.smartDesign?.templateId??POSTER_TEMPLATES[design?.smartDesign?.smartDesign??0]?.id??POSTER_TEMPLATES[0].id);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
-  const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
+  const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:clampTransform(selectedElement,{...(all[selectedElement]??defaultTransform),...patch})}));
   const smartLayout=(seed:number):PosterEditorLayout=>{const mode=seed%4;const side=mode%2===0?1:-1;return {
     logo:{...defaultTransform,x:-side*(12+mode*3),y:mode===2?6:0,scale:mode===1?1.08:.92},
     brand:{...defaultTransform,x:0,y:mode===0?-8:mode===1?6:0,scale:mode===3?.94:1},
@@ -144,7 +145,7 @@ export function PosterEditorScreen() {
         {zodiacConflict ? <View><Text accessibilityRole="alert" style={s.error}>{t('preview.zodiacMismatch')}</Text>
           <Pressable accessibilityRole="button" style={s.button} onPress={() => router.push('/studio')}><Text style={s.buttonText}>{t('studio.resume')}</Text></Pressable>
         </View> : <PosterCanvas key={layoutKey} ref={canvas} width={posterWidth} height={posterHeight} title={title} badge={badge}
-          sections={sections} brand={brand} templateId={templateId} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:{...base,x:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.x+dx)),y:Math.max(-posterWidth*.35,Math.min(posterWidth*.35,base.y+dy))}}});}}
+          sections={sections} brand={brand} templateId={templateId} variant={variant} font={font} background={background} editable selectedElement={selectedElement} elementTransforms={elementTransforms} onElementPress={setSelectedElement} onElementMove={(element,dx,dy)=>{setSelectedElement(element);setElementTransforms(all=>{const base=all[element]??defaultTransform;return {...all,[element]:clampTransform(element,{...base,x:base.x+dx,y:base.y+dy})};});}}
           onReady={height => setReady({key: layoutKey, height})}/>}
         <View style={s.controls}>
           <Text accessibilityRole="header" style={s.heading}>{t('preview.controls')}</Text>
