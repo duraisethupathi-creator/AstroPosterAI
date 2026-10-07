@@ -40,7 +40,7 @@ export function PosterEditorScreen() {
   const [projectSaved,setProjectSaved]=useState(false);
   const [smartDesign,setSmartDesign]=useState(design?.smartDesign?.smartDesign??0);
   const [smartLayoutStep,setSmartLayoutStep]=useState(0);
-  const [templateId,setTemplateId]=useState(POSTER_TEMPLATES[design?.smartDesign?.smartDesign??0]?.id??POSTER_TEMPLATES[0].id);
+  const [templateId,setTemplateId]=useState(design?.smartDesign?.templateId??POSTER_TEMPLATES[design?.smartDesign?.smartDesign??0]?.id??POSTER_TEMPLATES[0].id);
   const currentTransform=elementTransforms[selectedElement]??defaultTransform;
   const patchSelected=(patch:Partial<PosterElementTransform>)=>setElementTransforms(all=>({...all,[selectedElement]:{...(all[selectedElement]??defaultTransform),...patch}}));
   const smartLayout=(seed:number):PosterEditorLayout=>{const mode=seed%4;const side=mode%2===0?1:-1;return {
@@ -87,13 +87,13 @@ export function PosterEditorScreen() {
     const now=new Date().toISOString();
     try {
       if (projectId) {
-        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}});
+        await posterProjectStorage.update(projectId,{editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign,templateId},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}});
       } else {
         const id=`poster-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
         const project: PosterProject={id,batchId:id,createdAt:now,updatedAt:now,zodiacId:zodiac.id,
           zodiacName:translate(contentLanguage,zodiac.translationKey),zodiacSymbol:zodiac.symbol,language:contentLanguage,
           categoryId:design.request.categoryId,content:design.version.content,brand:design.request.brand,
-          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}};
+          request:design.request,editorLayout:elementTransforms,smartDesign:{variant,font,background,smartDesign,templateId},socialContent:social,socialState:{content:social,platform:socialPreset,variant:socialVariant}};
         await posterProjectStorage.saveAll([project]); setProjectId(id);
       }
       setProjectSaved(true);
@@ -152,7 +152,7 @@ export function PosterEditorScreen() {
             <Text style={s.smartTitle}>✨ Smart Design</Text>
             <Text style={s.controlLabel}>One tap automatically balances style, font and background without changing your astrology content.</Text>
             <View style={s.actions}><Pressable accessibilityRole="button" onPress={applySmartDesign} style={s.smartButton}><Text style={s.smartButtonText}>Magic Design · {smartDesign+1}/{POSTER_TEMPLATES.length}</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={()=>{const next=(smartLayoutStep+1)%4;setSmartLayoutStep(next);const templateIndex=(next+Math.max(0,zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0))%POSTER_TEMPLATES.length;setTemplateId(POSTER_TEMPLATES[templateIndex].id);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout · {smartLayoutStep+1}/4</Text></Pressable></View>
+            <Pressable accessibilityRole="button" onPress={()=>{const next=(smartLayoutStep+1)%4;setSmartLayoutStep(next);const templateIndex=(next+Math.max(0,zodiac?ZODIACS.findIndex(sign=>sign.id===zodiac.id):0))%POSTER_TEMPLATES.length;setTemplateId(POSTER_TEMPLATES[templateIndex].id);setSmartDesign(templateIndex);setVariant(templateIndex%variants.length);setFont(next%fonts.length);setBackground(next%backgrounds.length);setElementTransforms(smartLayout(next));setProjectSaved(false);}} style={s.smartButton}><Text style={s.smartButtonText}>Smart Layout · {smartLayoutStep+1}/4</Text></Pressable></View>
           </View>
           <Pressable accessibilityRole="button" disabled={!design||savingProject} onPress={()=>void saveProject()} style={[s.saveProject,(!design||savingProject)&&s.disabled]}>
             <Text style={s.saveProjectText}>{savingProject?'Saving…':projectSaved?'Saved ✓':'Save Project'}</Text>
