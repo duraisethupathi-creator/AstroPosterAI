@@ -66,6 +66,12 @@ export function PosterEditorScreen() {
   const [batchCount,setBatchCount]=useState(0);
   const [social,setSocial]=useState<SocialContent>(()=>design?.socialState?.content??{caption:'',description:'',hashtags:'',cta:''});
   const [socialPreset,setSocialPreset]=useState<'instagram'|'facebook'|'whatsapp'>(()=>design?.socialState?.platform??'instagram');
+  const selectSocialPreset=(platform:'instagram'|'facebook'|'whatsapp')=>{
+    setSocialPreset(platform);
+    // Keep the visible poster canvas in sync with the platform the user is preparing.
+    setExportPreset(platform==='instagram'?0:platform==='facebook'?3:2);
+    setProjectSaved(false);
+  };
   const [socialVariant,setSocialVariant]=useState(design?.socialState?.variant??0);
   const previewMaxWidth=Math.min(560,Math.max(1,width-40));
   const activePreset=exportPresets[exportPreset];
@@ -188,7 +194,7 @@ export function PosterEditorScreen() {
             {control(t('font'), t(fonts[font]), () => setFont(value => (value + 1) % fonts.length))}
             {control(t('background'), t(backgrounds[background]), () => setBackground(value => (value + 1) % backgrounds.length))}
           </View>
-          <View style={s.socialCard}><Text style={s.smartTitle}>Social Content Studio</Text><Text style={s.controlLabel}>Offline Tamil/English social copy. Select platform, generate variants, edit and copy.</Text><View style={s.platformActions}>{(['instagram','facebook','whatsapp'] as const).map(p=><Pressable key={p} onPress={()=>setSocialPreset(p)} style={[s.exportChip,socialPreset===p&&s.exportChipOn]}><Text style={socialPreset===p?s.exportChipTextOn:s.exportChipText}>{p[0].toUpperCase()+p.slice(1)}</Text></Pressable>)}</View><View style={s.actions}><Pressable onPress={generateSocial} style={s.smartButton}><Text style={s.smartButtonText}>{socialVariant?'Regenerate Variant':'Generate Social Content'}</Text></Pressable><Pressable onPress={()=>void copyAllSocial()} style={s.smartButton}><Text style={s.smartButtonText}>Copy All</Text></Pressable></View>{(['caption','description','hashtags','cta'] as const).map(key=><View key={key}><View style={s.socialHead}><Text style={s.socialLabel}>{key.toUpperCase()}</Text><Pressable onPress={()=>void copySocial(key)}><Text style={s.copyText}>Copy</Text></Pressable></View><TextInput multiline value={social[key]} onChangeText={value=>setSocial(old=>({...old,[key]:value}))} placeholder={'Enter '+key} placeholderTextColor="#666" style={s.socialInput}/></View>)}</View>
+          <View style={s.socialCard}><Text style={s.smartTitle}>Social Content Studio</Text><Text style={s.controlLabel}>Offline Tamil/English social copy. Select platform, generate variants, edit and copy.</Text><View style={s.platformActions}>{(['instagram','facebook','whatsapp'] as const).map(p=><Pressable key={p} onPress={()=>selectSocialPreset(p)} style={[s.exportChip,socialPreset===p&&s.exportChipOn]}><Text style={socialPreset===p?s.exportChipTextOn:s.exportChipText}>{p[0].toUpperCase()+p.slice(1)}</Text></Pressable>)}</View><View style={s.actions}><Pressable onPress={generateSocial} style={s.smartButton}><Text style={s.smartButtonText}>{socialVariant?'Regenerate Variant':'Generate Social Content'}</Text></Pressable><Pressable onPress={()=>void copyAllSocial()} style={s.smartButton}><Text style={s.smartButtonText}>Copy All</Text></Pressable></View>{(['caption','description','hashtags','cta'] as const).map(key=><View key={key}><View style={s.socialHead}><Text style={s.socialLabel}>{key.toUpperCase()}</Text><Pressable onPress={()=>void copySocial(key)}><Text style={s.copyText}>Copy</Text></Pressable></View><TextInput multiline value={social[key]} onChangeText={value=>setSocial(old=>({...old,[key]:value}))} placeholder={'Enter '+key} placeholderTextColor="#666" style={s.socialInput}/></View>)}</View>
                     <View style={s.exportCard}>
             <Text style={s.stage9Title}>Professional Export</Text>
             <Text style={s.controlLabel}>Preset · {exportPresets[exportPreset].name} · {exportPresets[exportPreset].w}×{exportPresets[exportPreset].h}</Text>
