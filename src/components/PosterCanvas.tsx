@@ -25,13 +25,18 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const baseFont=Math.min(18,Math.max(12,width/23));
   const textLoad=sections.reduce((n,s)=>n+s.label.length+s.text.length,0)+title.length+(badge?.length??0);
   const density=height?textLoad/Math.max(1,height):0;
-  const fontSize=height?(density>.62?9:density>.48?10:density>.36?11:density>.27?12:Math.min(14,baseFont)):baseFont;
+  // Fit content by both text density and canvas aspect ratio. Wide/square
+  // canvases have much less vertical room than Story, so shrink earlier there.
+  const aspect=height?width/height:.8;
+  const densityFont=density>.62?9:density>.48?10:density>.36?11:density>.27?12:Math.min(14,baseFont);
+  const ratioCap=aspect>=.95?9:aspect>=.78?10:aspect>=.62?12:14;
+  const fontSize=height?Math.min(densityFont,ratioCap):baseFont;
   const compact=Boolean(height);
   const padding=compact?Math.max(10,Math.min(16,width*.038)):Math.max(14,Math.min(24,width*.055));
   const lineHeight=Math.ceil(fontSize*(compact?1.28:1.65));
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
-  const headerImageSize=compact?Math.max(44,Math.min(64,width*.15)):Math.max(60,Math.min(88,width*.205));
+  const headerImageSize=compact?Math.max(34,Math.min(aspect>=.9?44:aspect>=.75?52:64,width*.15)):Math.max(60,Math.min(88,width*.205));
   const headerCenter=[brand?.businessName,brand?.astrologerName,brand?.address].filter(Boolean) as string[];
   const contactLines=brand?[brand.phone,brand.whatsapp,brand.website].filter((v,i,a)=>v.trim()&&a.indexOf(v)===i):[];
   const hasDeityUpload=deity?.mode==='upload'&&Boolean(deity.uri);
@@ -51,6 +56,9 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
   const innerTarget=height?Math.max(1,height-2*(padding+template.borderWidth)):undefined;
+  const sectionGap=aspect>=.9?2:aspect>=.75?3:Math.ceil(fontSize*.42);
+  const titleMargin=aspect>=.9?2:aspect>=.75?3:6;
+  const footerMargin=aspect>=.9?2:aspect>=.75?3:6;
   const safeInset=compact?Math.max(5,Math.round(width*.012)):0;
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
     backgroundColor:template.background,borderRadius:template.radius,...(height?{height,overflow:'hidden' as const}:{})}]}>
@@ -78,15 +86,15 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
       </View>:null}
 
       {badge?<Text numberOfLines={1} {...pan('badge')} allowFontScaling={false} style={[s.badge,tx('badge'),selectedElement==='badge'&&s.selected,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
-      <Text {...pan('title')} allowFontScaling={false} style={[s.title,tx('title'),selectedElement==='title'&&s.selected,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.5),textAlign:template.align,fontFamily:family}]}>{title}</Text>
-      <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:Math.ceil(fontSize*(compact?.42:.9))}}>
+      <Text {...pan('title')} allowFontScaling={false} style={[s.title,tx('title'),selectedElement==='title'&&s.selected,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.32),marginTop:titleMargin,textAlign:template.align,fontFamily:family}]}>{title}</Text>
+      <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:compact?sectionGap:Math.ceil(fontSize*.9)}}>
         <Text allowFontScaling={false} style={[s.label,{color:template.accent,fontSize,lineHeight,textAlign:template.align,fontFamily:family,
           textTransform:template.labelTransform}]}>{section.label}</Text>
-        <Text allowFontScaling={false} numberOfLines={compact?4:undefined} ellipsizeMode="tail" textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
+        <Text allowFontScaling={false} numberOfLines={compact?(aspect>=.9?2:aspect>=.75?3:4):undefined} ellipsizeMode="tail" textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
           style={[s.body,{color:template.body,fontSize,lineHeight,fontFamily:family,fontWeight:font===2?'600':'400',textAlign:template.align}]}>{section.text}</Text>
       </View>)}</View>
 
-      <View {...pan('footer')} style={[s.footer,tx('footer'),{borderTopColor:template.accent}]}>
+      <View {...pan('footer')} style={[s.footer,tx('footer'),{borderTopColor:template.accent,marginTop:footerMargin}]}>
         <Text allowFontScaling={false} style={{color:template.accent,fontSize:Math.max(11,fontSize-2),lineHeight:20,textAlign:'center',fontWeight:'800',fontFamily:family}}>{DEVOTIONAL_FOOTER}</Text>
         {contactLines.length?<Text allowFontScaling={false} style={{color:template.body,fontSize:10,lineHeight:16,textAlign:'center',fontFamily:family}}>{contactLines.join('  •  ')}</Text>:null}
       </View>
