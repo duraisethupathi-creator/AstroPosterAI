@@ -41,8 +41,12 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
     // Text blocks stay inside the poster safe area even when an older saved layout
     // or Smart Design contains aggressive horizontal offsets/scales.
     const textElement=id==='badge'||id==='title'||id==='content'||id==='footer'||id==='brand';
-    const safeX=textElement?Math.max(-4,Math.min(4,value.x)):value.x;
-    const safeScale=textElement?Math.min(1.08,value.scale):value.scale;
+    const edgeElement=textElement||id==='logo'||id==='profile'||id==='deity';
+    // Every editable element gets a horizontal safe-area clamp. This prevents
+    // Smart Layout and older saved transforms from pushing zodiac/header items
+    // outside narrow Square/Story/Facebook canvases.
+    const safeX=edgeElement?Math.max(-4,Math.min(4,value.x)):value.x;
+    const safeScale=textElement?Math.min(1.08,value.scale):Math.min(1.12,value.scale);
     return {opacity:value.opacity,transform:[{translateX:safeX},{translateY:value.y},{rotate:`${value.rotation}deg`},{scale:safeScale}]};};
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
