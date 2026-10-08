@@ -32,8 +32,10 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const ratioCap=aspect>=.95?9:aspect>=.78?10:aspect>=.62?12:14;
   const fontSize=height?Math.min(densityFont,ratioCap):baseFont;
   const compact=Boolean(height);
+  const tallLayout=Boolean(height)&&aspect<=.62;
+  const squareLayout=Boolean(height)&&aspect>=.9;
   const padding=compact?Math.max(10,Math.min(16,width*.038)):Math.max(14,Math.min(24,width*.055));
-  const lineHeight=Math.ceil(fontSize*(compact?1.28:1.65));
+  const lineHeight=Math.ceil(fontSize*(tallLayout?1.48:compact?1.28:1.65));
   const family=font===1||template.fontFamily==='serif'?'serif':undefined;
   const god=effectiveDeity(deity,templateId);
   const headerImageSize=compact?Math.max(34,Math.min(aspect>=.9?44:aspect>=.75?52:64,width*.15)):Math.max(60,Math.min(88,width*.205));
@@ -56,9 +58,9 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
   const pan=(id: NonNullable<Props['selectedElement']>)=>editable?PanResponder.create({onStartShouldSetPanResponder:()=>true,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>2||Math.abs(g.dy)>2,onPanResponderGrant:()=>onElementPress?.(id),onPanResponderRelease:(_,g)=>onElementMove?.(id,g.dx,g.dy)}).panHandlers:{};
 
   const innerTarget=height?Math.max(1,height-2*(padding+template.borderWidth)):undefined;
-  const sectionGap=aspect>=.9?2:aspect>=.75?3:Math.ceil(fontSize*.42);
-  const titleMargin=aspect>=.9?2:aspect>=.75?3:6;
-  const footerMargin=aspect>=.9?2:aspect>=.75?3:6;
+  const sectionGap=squareLayout?2:aspect>=.75?3:tallLayout?Math.max(8,Math.round((height??0)*.012)):Math.ceil(fontSize*.42);
+  const titleMargin=squareLayout?2:aspect>=.75?3:tallLayout?10:6;
+  const footerMargin=squareLayout?2:aspect>=.75?3:tallLayout?12:6;
   const safeInset=compact?Math.max(5,Math.round(width*.012)):0;
   return <View ref={ref} collapsable={false} style={[s.canvas,{width,padding,borderWidth:template.borderWidth,borderColor:template.accent,
     backgroundColor:template.background,borderRadius:template.radius,...(height?{height,overflow:'hidden' as const}:{})}]}>
@@ -87,10 +89,10 @@ export const PosterCanvas = forwardRef<View, Props>(function PosterCanvas({width
 
       {badge?<Text numberOfLines={1} {...pan('badge')} allowFontScaling={false} style={[s.badge,tx('badge'),selectedElement==='badge'&&s.selected,{color:template.accent,fontSize:fontSize+3,lineHeight:lineHeight+6,textAlign:template.align}]}>{badge}</Text>:null}
       <Text {...pan('title')} allowFontScaling={false} style={[s.title,tx('title'),selectedElement==='title'&&s.selected,{color:template.title,fontSize:fontSize+7,lineHeight:Math.ceil((fontSize+7)*1.32),marginTop:titleMargin,textAlign:template.align,fontFamily:family}]}>{title}</Text>
-      <View {...pan('content')} style={tx('content')}>{sections.map(section=><View key={section.key} style={{marginTop:compact?sectionGap:Math.ceil(fontSize*.9)}}>
+      <View {...pan('content')} style={[tx('content'),tallLayout&&s.tallContent]}>{sections.map(section=><View key={section.key} style={{marginTop:compact?sectionGap:Math.ceil(fontSize*.9)}}>
         <Text allowFontScaling={false} style={[s.label,{color:template.accent,fontSize,lineHeight,textAlign:template.align,fontFamily:family,
           textTransform:template.labelTransform}]}>{section.label}</Text>
-        <Text allowFontScaling={false} numberOfLines={compact?(aspect>=.9?2:aspect>=.75?3:4):undefined} ellipsizeMode="tail" textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
+        <Text allowFontScaling={false} numberOfLines={compact?(squareLayout?2:aspect>=.75?3:tallLayout?5:4):undefined} ellipsizeMode="tail" textBreakStrategy="highQuality" android_hyphenationFrequency="normal"
           style={[s.body,{color:template.body,fontSize,lineHeight,fontFamily:family,fontWeight:font===2?'600':'400',textAlign:template.align}]}>{section.text}</Text>
       </View>)}</View>
 
@@ -110,6 +112,7 @@ const s=StyleSheet.create({
   title:{fontWeight:'800',marginTop:6,includeFontPadding:true},
   label:{fontWeight:'700',includeFontPadding:true},
   body:{includeFontPadding:true,flexShrink:1},
+  tallContent:{flexGrow:1,justifyContent:'space-evenly'},
   footer:{marginTop:6,paddingTop:5,borderTopWidth:1,gap:1},
   deity:{alignItems:'center',justifyContent:'center'},
   selected:{borderWidth:1,borderColor:'#E8C97D',borderRadius:6}
